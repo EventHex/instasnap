@@ -186,3 +186,11 @@ export interface UIState {
   photos: FaceMatch[] | AnonymousPhoto[];
   groupId: string | null;
 }
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  avatar: string;
+  joinedAt: string;
+}

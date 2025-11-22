@@ -1,260 +1,275 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
-import { AnonymousPhoto } from '@/lib/types';
-import { storage } from '@/lib/storage';
-import { downloadBlob, compressImage } from '@/lib/utils';
+import { AnonymousPhoto, PhotoPermission } from '@/lib/types';
+import { Button } from '@/components/ui/Button';
+import { Card, CardContent } from '@/components/ui/Card';
 import Link from 'next/link';
+import Image from 'next/image';
+import { Footer } from '@/components/layout/Footer';
+import { ArrowLeft, Camera, Download, ExternalLink } from 'lucide-react';
 
 export default function AnonymousMatchPage() {
-  const [selfie, setSelfie] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
-  const [photos, setPhotos] = useState<AnonymousPhoto[]>([]);
+  const router = useRouter();
+  const [photoPermission, setPhotoPermission] = useState<PhotoPermission | null>(null);
+  const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<AnonymousPhoto[]>([]);
+  const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [matched, setMatched] = useState(false);
-  const [groupId, setGroupId] = useState<string | null>(null);
-  const [processingTime, setProcessingTime] = useState<string>('');
-
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const eventId = process.env.NEXT_PUBLIC_EVENT_ID || '';
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    const fetchPhotoPermission = async () => {
+      try {
+        const response = await api.getPhotoPermission(eventId);
+        if (response.success && response.response.length > 0) {
+          const permission = response.response[0];
+          setPhotoPermission(permission);
+          
+          // Redirect if Quick Match is not allowed (Everyone or Attendees mode)
+          const access = permission.photoViewAccess;
+          if (access === 'Everyone' || access === 'Attendees') {
+            router.push('/');
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch photo permissions:', error);
+      } finally {
+        setIsLoadingPermissions(false);
+      }
+    };
+
+    fetchPhotoPermission();
+  }, [eventId, router]);
+
+  if (isLoadingPermissions) {
+    return (
+      <div className="h-dvh flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    setError(null);
-
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setError('Please upload an image file');
-      return;
-    }
-
-    // Validate file size (10MB max)
-    if (file.size > 10 * 1024 * 1024) {
-      setError('File size must be less than 10MB');
-      return;
-    }
-
-    try {
-      // Compress image if needed
-      const compressedFile = await compressImage(file);
-      setSelfie(compressedFile);
-
-      // Create preview
+    if (file) {
+      setFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPreview(reader.result as string);
+        setSelectedImage(reader.result as string);
       };
-      reader.readAsDataURL(compressedFile);
-    } catch {
-      setError('Failed to process image');
+      reader.readAsDataURL(file);
+      setError(null);
+      setSearched(false);
+      setResults([]);
     }
   };
 
-  const handleMatch = async () => {
-    if (!selfie) {
-      setError('Please upload a selfie first');
-      return;
-    }
+  const handleSearch = async () => {
+    if (!file || !eventId) return;
 
     setLoading(true);
     setError(null);
-
     try {
-      const result = await api.matchAnonymous(selfie, eventId);
-      
-      setMatched(result.matched);
-      setProcessingTime(result.processingTime);
-
-      if (result.matched && result.photos) {
-        setPhotos(result.photos);
-        if (result.groupId) {
-          setGroupId(result.groupId);
-          storage.setGroupId(result.groupId);
-        }
+      const response = await api.matchAnonymous(file, eventId);
+      if (response.success) {
+        setResults(response.photos);
       } else {
-        setError(result.message || 'No matching photos found');
+        setError(response.message || 'No matches found');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to match photos');
+      setError('Failed to search for photos. Please try again.');
+      console.error(err);
     } finally {
       setLoading(false);
+      setSearched(true);
     }
   };
 
-  const handleDownloadZIP = async () => {
-    if (!groupId) {
-      setError('No group ID available for download');
-      return;
+  const downloadAll = async () => {
+    for (const photo of results) {
+      try {
+        const link = document.createElement('a');
+        link.href = photo.originalUrl;
+        link.download = `photo-${photo.imageId}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (err) {
+        console.error('Failed to download photo:', err);
+      }
     }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const blob = await api.downloadZIP(groupId);
-      downloadBlob(blob, `event-photos-${Date.now()}.zip`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to download ZIP');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleReset = () => {
-    setSelfie(null);
-    setPreview(null);
-    setPhotos([]);
-    setMatched(false);
-    setGroupId(null);
-    setError(null);
-    setProcessingTime('');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-6">
-          <Link href="/" className="text-indigo-600 hover:text-indigo-700 font-medium">
-            ← Back to Home
-          </Link>
-        </div>
+    <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-background">
+      {/* Ambient Background Effects */}
+      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[50%] bg-indigo-500/10 rounded-full blur-[120px] animate-float pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] animate-float animate-delay-500 pointer-events-none" />
 
-        <div className="bg-white rounded-xl shadow-lg p-6 md:p-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Anonymous Match</h1>
-          <p className="text-gray-600 mb-6">Upload a selfie to find your photos instantly - no registration needed!</p>
+      <div className="flex-1 flex flex-col items-center py-12 px-4 animate-fade-in relative z-10 overflow-y-auto">
+        <div className="w-full max-w-4xl space-y-12 pb-24">
 
-          {!matched ? (
-            <div className="space-y-6">
-              {/* Upload Section */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Upload Your Selfie
-                </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-indigo-500 transition-colors">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    capture="user"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    id="selfie-upload"
-                  />
-                  <label
-                    htmlFor="selfie-upload"
-                    className="cursor-pointer flex flex-col items-center"
-                  >
-                    {preview ? (
-                      <img src={preview} alt="Preview" className="w-48 h-48 object-cover rounded-lg mb-4" />
-                    ) : (
-                      <div className="w-48 h-48 bg-gray-100 rounded-lg mb-4 flex items-center justify-center">
-                        <span className="text-gray-400 text-4xl">📷</span>
-                      </div>
-                    )}
-                    <span className="text-indigo-600 font-medium">
-                      {preview ? 'Change Photo' : 'Click to Upload or Take Photo'}
-                    </span>
-                    <span className="text-xs text-gray-500 mt-1">
-                      Maximum file size: 10MB
-                    </span>
-                  </label>
-                </div>
+          {/* Header */}
+          <div className="text-center space-y-6">
+            <Link href="/">
+              <div className="inline-flex items-center justify-center p-1.5 mb-6 glass rounded-full hover:scale-105 transition-transform cursor-pointer">
+                <span className="px-4 py-1.5 text-xs font-semibold text-white uppercase tracking-widest bg-white/10 rounded-full flex items-center gap-2">
+                  <ArrowLeft className="w-3 h-3" /> Back to Home
+                </span>
+              </div>
+            </Link>
+            <h1 className="text-5xl md:text-7xl font-thin tracking-tighter text-white drop-shadow-2xl">
+              Find Your <br />
+              <span className="font-bold text-transparent bg-clip-text bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400 animate-shimmer bg-size-[200%_auto]">
+                Moments
+              </span>
+            </h1>
+            <p className="text-xl text-white/60 max-w-lg mx-auto font-light">
+              Upload a selfie to instantly discover photos you're in.
+            </p>
+          </div>
+
+          {/* Upload Section */}
+          <Card className="border-0 bg-linear-to-br from-white/5 to-white/0 backdrop-blur-3xl shadow-2xl overflow-hidden relative rounded-[2.5rem]">
+            <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 opacity-50" />
+            <CardContent className="p-12 flex flex-col items-center relative z-10">
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="relative group cursor-pointer w-64 h-64 rounded-[2rem] flex items-center justify-center transition-all duration-500 hover:scale-105"
+              >
+                <div className="absolute inset-0 bg-linear-to-br from-white/10 to-transparent rounded-[2rem] border border-white/20 group-hover:border-white/40 transition-colors shadow-inner" />
+
+                {selectedImage ? (
+                  <div className="relative w-full h-full rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/20">
+                    <Image
+                      src={selectedImage}
+                      alt="Selfie preview"
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                      <span className="text-white font-medium tracking-wide">Change Photo</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center space-y-4 text-white/60 group-hover:text-white transition-colors">
+                    <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center text-4xl shadow-inner ring-1 ring-white/10 group-hover:bg-white/10 transition-colors">
+                      <Camera className="w-10 h-10" />
+                    </div>
+                    <span className="text-sm font-medium tracking-widest uppercase">Tap to Upload</span>
+                  </div>
+                )}
               </div>
 
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImageUpload}
+                accept="image/*"
+                className="hidden"
+              />
+
               {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                <div className="mt-8 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm animate-slide-up backdrop-blur-md">
                   {error}
                 </div>
               )}
 
-              <button
-                onClick={handleMatch}
-                disabled={!selfie || loading}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-              >
-                {loading ? 'Analyzing...' : 'Find My Photos'}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Success Message */}
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-                <div className="font-semibold">Found {photos.length} photos!</div>
-                <div className="text-sm">Processing time: {processingTime}</div>
+              <div className="mt-10 w-full max-w-xs">
+                <Button
+                  onClick={handleSearch}
+                  disabled={!file || loading}
+                  variant="liquid"
+                  size="lg"
+                  className="w-full text-lg font-semibold tracking-wide h-14"
+                >
+                  {loading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Searching...
+                    </div>
+                  ) : 'Find My Photos'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Results Section */}
+          {searched && results.length > 0 && (
+            <div className="space-y-8 animate-fade-in">
+              <div className="flex items-center justify-between px-4">
+                <h2 className="text-3xl font-light text-white">
+                  Found <span className="font-bold text-indigo-400">{results.length}</span> photos
+                </h2>
+                <Button onClick={downloadAll} variant="outline" className="rounded-full border-white/20 hover:bg-white/10">
+                  <Download className="w-4 h-4 mr-2" />
+                  Download All
+                </Button>
               </div>
 
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={handleDownloadZIP}
-                  disabled={loading}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors"
-                >
-                  {loading ? 'Preparing...' : `Download All (${photos.length})`}
-                </button>
-                <button
-                  onClick={handleReset}
-                  className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-                >
-                  Try Again
-                </button>
-              </div>
-
-              {/* Photo Gallery */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {photos.map((photo, index) => (
-                  <div key={photo.imageId} className="overflow-hidden rounded-lg" style={{ backgroundColor: '#f3f4f6' }}>
-                    <img
-                      src={photo.thumbnailUrl}
-                      alt={`Event photo ${index + 1}`}
-                      style={{ 
-                        width: '100%', 
-                        height: '192px', 
-                        objectFit: 'cover',
-                        display: 'block',
-                        opacity: 1,
-                        filter: 'none'
-                      }}
-                      crossOrigin="anonymous"
-                      onError={(e) => {
-                        console.error('Image failed to load:', photo.thumbnailUrl);
-                        e.currentTarget.src = photo.compressedUrl;
-                      }}
-                      onLoad={(e) => {
-                        console.log('Image loaded successfully:', photo.thumbnailUrl);
-                        console.log('Image dimensions:', e.currentTarget.naturalWidth, 'x', e.currentTarget.naturalHeight);
-                      }}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {results.map((photo, index) => (
+                  <div
+                    key={index}
+                    className="group relative aspect-3/4 rounded-[2rem] overflow-hidden bg-white/5 ring-1 ring-white/10 shadow-2xl transition-all duration-500 hover:scale-[1.02] hover:ring-white/30"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <Image
+                      src={photo.thumbnailUrl || photo.compressedUrl}
+                      alt={`Match ${index + 1}`}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="p-2 text-center">
+                    <div className="absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
                       <a
                         href={photo.originalUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+                        className="inline-flex items-center justify-center w-full py-3 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl text-white font-medium hover:bg-white/20 transition-colors gap-2"
                       >
-                        View Full Size
+                        <ExternalLink className="w-4 h-4" />
+                        View Full Quality
                       </a>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Convert to Registered */}
-              <div className="border-t pt-6">
-                <p className="text-gray-600 mb-3">Want to save time on future visits?</p>
-                <Link
-                  href="/registered"
-                  className="inline-block bg-white border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 font-semibold py-2 px-6 rounded-lg transition-colors"
-                >
-                  Register with Mobile
-                </Link>
-              </div>
             </div>
+          )}
+
+          {/* Registration Prompt */}
+          {searched && results.length > 0 && (
+            <Card className="border-0 bg-linear-to-r from-indigo-900/40 to-purple-900/40 backdrop-blur-3xl overflow-hidden relative rounded-[2.5rem]">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+
+              <CardContent className="p-12 text-center relative z-10 space-y-8">
+                <div className="space-y-4">
+                  <h3 className="text-3xl font-bold text-white">Save Your Collection</h3>
+                  <p className="text-indigo-100/80 text-lg font-light max-w-xl mx-auto">
+                    Create an account to save these photos and get notified when new ones are found.
+                  </p>
+                </div>
+                <Link href="/registered">
+                  <Button variant="liquid" size="lg" className="px-12 h-14 text-lg">
+                    Create Account
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }
