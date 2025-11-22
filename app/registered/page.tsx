@@ -11,18 +11,18 @@ import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
 import { ArrowLeft, Lock, Sparkles, Camera, Download, Image as ImageIcon, LogOut, RefreshCw, Send, CheckCircle, ArrowRight, Smartphone, KeyRound } from 'lucide-react';
 
-type Step = 'mode' | 'register' | 'mobile' | 'otp' | 'selfie' | 'photos';
+type Step = 'mobile' | 'otp' | 'selfie' | 'photos';
 
 export default function RegisteredPage() {
   const router = useRouter();
   const [photoPermission, setPhotoPermission] = useState<PhotoPermission | null>(null);
   const [isLoadingPermissions, setIsLoadingPermissions] = useState(true);
-  const [step, setStep] = useState<Step>('mode');
+  const [step, setStep] = useState<Step>('mobile');
   
-  // Mode selection
-  const [isNewUser, setIsNewUser] = useState<boolean | null>(null);
+  // Registration/Login state
+  const [isRegistering, setIsRegistering] = useState(false);
   
-  // Registration form
+  // Form Data
   const [firstName, setFirstName] = useState('');
   const [mobile, setMobile] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
@@ -93,6 +93,31 @@ export default function RegisteredPage() {
     }
   };
 
+  // Handle Check Mobile (First Step)
+  const handleCheckMobile = async () => {
+    if (!mobile) {
+      setError('Please enter your mobile number');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Try to send OTP. If it fails, we assume user needs to register.
+      await api.sendOTP(mobile, eventId, countryCode);
+      setUserMobile(mobile);
+      setStep('otp');
+    } catch (err: any) {
+      // If sending OTP fails, assume user is not registered
+      // Ideally we check error message, but for now we fallback to registration
+      setIsRegistering(true);
+      setError(null); // Clear error to show registration form cleanly
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Handle registration
   const handleRegister = async () => {
     if (!firstName || !mobile || !emailId || !registerSelfie) {
@@ -124,27 +149,6 @@ export default function RegisteredPage() {
       }
     } catch (err: any) {
       setError(err.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle send OTP
-  const handleSendOTP = async () => {
-    if (!mobile) {
-      setError('Please enter your mobile number');
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      await api.sendOTP(mobile, eventId, countryCode);
-      setUserMobile(mobile);
-      setStep('otp');
-    } catch (err: any) {
-      setError(err.message || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -276,8 +280,8 @@ export default function RegisteredPage() {
 
   // Handle logout
   const handleLogout = () => {
-    setStep('mode');
-    setIsNewUser(null);
+    setStep('mobile');
+    setIsRegistering(false);
     setFirstName('');
     setMobile('');
     setEmailId('');
@@ -292,6 +296,20 @@ export default function RegisteredPage() {
     setToken(null);
     setUserMobile(null);
     setError(null);
+  };
+
+  // Handle resend OTP
+  const handleResendOTP = async () => {
+    if (!userMobile) return;
+    setLoading(true);
+    try {
+      await api.sendOTP(userMobile, eventId, countryCode);
+      setError(null);
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend OTP');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (isLoadingPermissions) {
@@ -327,101 +345,21 @@ export default function RegisteredPage() {
             </span>
           </h1>
           <p className="text-xl text-white/60 max-w-lg mx-auto font-light">
-            {step === 'mode' && 'Login or register to access your photos.'}
-            {step === 'register' && 'Create your account to get started.'}
-            {step === 'mobile' && 'Enter your mobile number to continue.'}
+            {step === 'mobile' && !isRegistering && 'Enter your mobile number to continue.'}
+            {step === 'mobile' && isRegistering && 'Create your account to get started.'}
             {step === 'otp' && 'Enter the OTP sent to your mobile.'}
             {step === 'selfie' && 'Upload a selfie to find your photos.'}
             {step === 'photos' && `Found ${results.length} photo${results.length !== 1 ? 's' : ''} with you!`}
           </p>
         </div>
 
-        {/* Mode Selection */}
-        {step === 'mode' && (
-          <div className="flex flex-col gap-4 w-full max-w-md mx-auto animate-fade-in">
-            {/* Existing User Card */}
-            <div
-              onClick={() => {
-                setIsNewUser(false);
-                setStep('mobile');
-              }}
-              className="group block transform transition-transform duration-500 hover:scale-105 active:scale-95 cursor-pointer"
-            >
-              <div className="flex items-center p-3 pr-4 bg-white/5 hover:bg-white/10 backdrop-blur-2xl border border-white/10 rounded-full transition-all duration-500 group-hover:border-white/20 group-hover:shadow-[0_0_40px_-10px_rgba(148,163,184,0.3)] relative overflow-hidden w-full">
-                 <div className="absolute inset-0 bg-linear-to-r from-slate-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                 
-                 <div className="w-12 h-12 rounded-full bg-linear-to-tr from-white/10 to-white/5 flex items-center justify-center text-xl shadow-inner ring-1 ring-white/20 shrink-0">
-                    <Lock className="w-6 h-6 text-white" />
-                 </div>
-                 
-                 <div className="flex-1 px-4 text-left">
-                    <h2 className="text-lg font-bold text-white tracking-tight">Existing User</h2>
-                    <p className="text-slate-200/60 text-xs font-light">Already have an account?</p>
-                 </div>
-                 
-                 <div className="px-5 py-2 rounded-full bg-white/10 group-hover:bg-white/20 text-white text-sm font-semibold transition-all duration-300 flex items-center gap-2 shrink-0">
-                    Login <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                 </div>
-              </div>
-            </div>
-
-            {/* New User Card */}
-            <div
-              onClick={() => {
-                setIsNewUser(true);
-                setStep('register');
-              }}
-              className="group block transform transition-transform duration-500 hover:scale-105 active:scale-95 cursor-pointer"
-            >
-              <div className="flex items-center p-3 pr-4 bg-white/5 hover:bg-white/10 backdrop-blur-2xl border border-white/10 rounded-full transition-all duration-500 group-hover:border-white/20 group-hover:shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)] relative overflow-hidden w-full">
-                 <div className="absolute inset-0 bg-linear-to-r from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                 
-                 <div className="w-12 h-12 rounded-full bg-linear-to-tr from-white/10 to-white/5 flex items-center justify-center text-xl shadow-inner ring-1 ring-white/20 shrink-0">
-                    <Sparkles className="w-6 h-6 text-white" />
-                 </div>
-                 
-                 <div className="flex-1 px-4 text-left">
-                    <h2 className="text-lg font-bold text-white tracking-tight">New User</h2>
-                    <p className="text-indigo-100/60 text-xs font-light">First time here?</p>
-                 </div>
-                 
-                 <div className="px-5 py-2 rounded-full bg-white/10 group-hover:bg-white/20 text-white text-sm font-semibold transition-all duration-300 flex items-center gap-2 shrink-0">
-                    Register <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Registration Form */}
-        {step === 'register' && (
-          <Card className="bg-[#0a0a0a]/60 backdrop-blur-[50px] saturate-150 shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in border border-white/10 ring-1 ring-white/5">
+        {/* Mobile Number & Registration Form */}
+        {step === 'mobile' && (
+          <Card className="bg-[#0a0a0a]/60 backdrop-blur-[50px] saturate-150 shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in border border-white/10 ring-1 ring-white/5 transition-all duration-500">
             <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-30" />
             <CardContent className="p-12 space-y-8 relative z-10">
               
               <div className="space-y-6">
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-white/80 uppercase tracking-widest">Full Name</label>
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Enter your full name"
-                    className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
-                  />
-                </div>
-
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-white/80 uppercase tracking-widest">Email Address</label>
-                  <input
-                    type="email"
-                    value={emailId}
-                    onChange={(e) => setEmailId(e.target.value)}
-                    placeholder="your.email@example.com"
-                    className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
-                  />
-                </div>
-
                 <div className="space-y-3">
                   <label className="text-sm font-semibold text-white/80 uppercase tracking-widest">Mobile Number</label>
                   <div className="flex gap-3">
@@ -440,149 +378,98 @@ export default function RegisteredPage() {
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       placeholder="9876543210"
-                      className="flex-1 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
+                      className="flex-1 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all text-lg"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-sm font-semibold text-white/80 uppercase tracking-widest">Upload Selfie</label>
-                  <div
-                    onClick={() => registerSelfieInputRef.current?.click()}
-                    className="relative group cursor-pointer w-full aspect-square max-w-xs mx-auto rounded-[2rem] flex items-center justify-center transition-all duration-500 hover:scale-105"
-                  >
-                    <div className="absolute inset-0 bg-linear-to-br from-white/10 to-transparent rounded-[2rem] border border-white/20 group-hover:border-white/40 transition-colors shadow-inner" />
+                {/* Expanded Registration Fields */}
+                {isRegistering && (
+                  <div className="space-y-6 animate-slide-down">
+                    <div className="space-y-3">
+                      <label className="text-sm font-semibold text-white/80 uppercase tracking-widest">Full Name</label>
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="Enter your full name"
+                        className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
+                      />
+                    </div>
 
-                    {registerSelfiePreview ? (
-                      <div className="relative w-full h-full rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/20">
-                        <Image
-                          src={registerSelfiePreview}
-                          alt="Selfie preview"
-                          fill
-                          className="object-cover"
-                        />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-                          <span className="text-white font-medium tracking-wide">Change Photo</span>
-                        </div>
+                    <div className="space-y-3">
+                      <label className="text-sm font-semibold text-white/80 uppercase tracking-widest">Email Address</label>
+                      <input
+                        type="email"
+                        value={emailId}
+                        onChange={(e) => setEmailId(e.target.value)}
+                        placeholder="your.email@example.com"
+                        className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <label className="text-sm font-semibold text-white/80 uppercase tracking-widest">Upload Selfie</label>
+                      <div
+                        onClick={() => registerSelfieInputRef.current?.click()}
+                        className="relative group cursor-pointer w-full aspect-square max-w-xs mx-auto rounded-[2rem] flex items-center justify-center transition-all duration-500 hover:scale-105"
+                      >
+                        <div className="absolute inset-0 bg-linear-to-br from-white/10 to-transparent rounded-[2rem] border border-white/20 group-hover:border-white/40 transition-colors shadow-inner" />
+
+                        {registerSelfiePreview ? (
+                          <div className="relative w-full h-full rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/20">
+                            <Image
+                              src={registerSelfiePreview}
+                              alt="Selfie preview"
+                              fill
+                              className="object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                              <span className="text-white font-medium tracking-wide">Change Photo</span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center space-y-4 text-white/60 group-hover:text-white transition-colors">
+                            <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center text-4xl shadow-inner ring-1 ring-white/10 group-hover:bg-white/10 transition-colors">
+                              <Camera className="w-10 h-10" />
+                            </div>
+                            <span className="text-sm font-medium tracking-widest uppercase">Tap to Upload</span>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="flex flex-col items-center space-y-4 text-white/60 group-hover:text-white transition-colors">
-                        <div className="w-20 h-20 rounded-2xl bg-white/5 flex items-center justify-center text-4xl shadow-inner ring-1 ring-white/10 group-hover:bg-white/10 transition-colors">
-                          <Camera className="w-10 h-10" />
-                        </div>
-                        <span className="text-sm font-medium tracking-widest uppercase">Tap to Upload</span>
-                      </div>
-                    )}
+                      <input
+                        type="file"
+                        ref={registerSelfieInputRef}
+                        onChange={handleRegisterSelfieUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                    </div>
                   </div>
-                  <input
-                    type="file"
-                    ref={registerSelfieInputRef}
-                    onChange={handleRegisterSelfieUpload}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </div>
-              </div>
+                )}
 
-              {error && (
-                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm animate-slide-up backdrop-blur-md">
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm animate-slide-up backdrop-blur-md text-center">
+                    {error}
+                  </div>
+                )}
 
-              <div className="flex gap-4">
-                <Button
-                  onClick={() => {
-                    setStep('mode');
-                    setError(null);
-                  }}
-                  variant="outline"
-                  size="lg"
-                  className="flex-1"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleRegister}
-                  disabled={loading || !firstName || !mobile || !emailId || !registerSelfie}
-                  variant="liquid"
-                  size="lg"
-                  className="flex-1"
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Registering...
-                    </div>
-                  ) : 'Register'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Mobile Number Entry */}
-        {step === 'mobile' && (
-          <Card className="bg-[#0a0a0a]/60 backdrop-blur-[50px] saturate-150 shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in border border-white/10 ring-1 ring-white/5">
-            <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-30" />
-            <CardContent className="p-12 space-y-8 relative z-10">
-              
-              <div className="space-y-3">
-                <label className="text-sm font-semibold text-white/80 uppercase tracking-widest">Mobile Number</label>
-                <div className="flex gap-3">
-                  <select
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(e.target.value)}
-                    className="px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
+                <div className="flex gap-4">
+                  <Button
+                    onClick={isRegistering ? handleRegister : handleCheckMobile}
+                    disabled={loading || !mobile || (isRegistering && (!firstName || !emailId || !registerSelfie))}
+                    variant="liquid"
+                    size="lg"
+                    className="w-full"
                   >
-                    <option value="+91" className="bg-gray-900">+91</option>
-                    <option value="+1" className="bg-gray-900">+1</option>
-                    <option value="+44" className="bg-gray-900">+44</option>
-                    <option value="+971" className="bg-gray-900">+971</option>
-                  </select>
-                  <input
-                    type="tel"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
-                    placeholder="9876543210"
-                    className="flex-1 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all text-lg"
-                  />
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        {isRegistering ? 'Registering...' : 'Continue'}
+                      </div>
+                    ) : (isRegistering ? 'Register' : 'Continue')}
+                  </Button>
                 </div>
-                <p className="text-xs text-white/40 font-light">We'll send you an OTP to verify your number</p>
-              </div>
-
-              {error && (
-                <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-200 text-sm animate-slide-up backdrop-blur-md">
-                  {error}
-                </div>
-              )}
-
-              <div className="flex gap-4">
-                <Button
-                  onClick={() => {
-                    setStep('mode');
-                    setError(null);
-                  }}
-                  variant="outline"
-                  size="lg"
-                  className="flex-1"
-                >
-                  Back
-                </Button>
-                <Button
-                  onClick={handleSendOTP}
-                  disabled={loading || !mobile}
-                  variant="liquid"
-                  size="lg"
-                  className="flex-1"
-                >
-                  {loading ? (
-                    <div className="flex items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Sending...
-                    </div>
-                  ) : 'Send OTP'}
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -628,7 +515,7 @@ export default function RegisteredPage() {
 
               <div className="text-center">
                 <button
-                  onClick={handleSendOTP}
+                  onClick={handleResendOTP}
                   className="text-sm text-indigo-300 hover:text-indigo-200 underline transition-colors font-light"
                 >
                   Resend OTP
@@ -638,7 +525,7 @@ export default function RegisteredPage() {
               <div className="flex gap-4">
                 <Button
                   onClick={() => {
-                    setStep(isNewUser ? 'register' : 'mobile');
+                    setStep('mobile');
                     setOtp(['', '', '', '']);
                     setError(null);
                   }}
