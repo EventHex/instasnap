@@ -1,0 +1,15 @@
+{
+  "name": "instasnap-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "InstaSnap face matching frontend - Find event photos by uploading a selfie",
+  "author": "DataHex",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit"
+  }
+}

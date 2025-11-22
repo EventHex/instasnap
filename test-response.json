@@ -1,0 +1,11 @@
+{
+  "success": true,
+  "photos": [
+    {
+      "_id": "6921b624e99ffb9d3b23e9a6",
+      "image": "https://event-hex-saas.s3.us-east-1.amazonaws.com/691d677ea6a885abcb6ec93c/photos/d89e5b72-2409-4bd2-ab6f-b89664efc6da.jpg",
+      "compressed": "https://event-hex-saas.s3.us-east-1.amazonaws.com/691d677ea6a885abcb6ec93c/photos/compressed/d89e5b72-2409-4bd2-ab6f-b89664efc6da.jpg",
+      "thumbnail": "https://event-hex-saas.s3.us-east-1.amazonaws.com/691d677ea6a885abcb6ec93c/photos/thumbnails/d89e5b72-2409-4bd2-ab6f-b89664efc6da.jpg"
+    }
+  ]
+}
