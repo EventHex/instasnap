@@ -323,7 +323,10 @@ export default function RegisteredPage() {
   const iosCardClass = "bg-[#1c1c1e]/70 backdrop-blur-3xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] rounded-[2.5rem] overflow-hidden relative ring-1 ring-white/5 transition-all duration-500";
   const iosInputClass = "w-full px-6 py-4 bg-[#000000]/20 border border-white/5 rounded-full text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 focus:bg-black/40 transition-all text-lg shadow-inner";
   const iosSelectClass = "px-6 py-4 bg-[#000000]/20 border border-white/5 rounded-full text-white focus:outline-none focus:ring-2 focus:ring-white/20 focus:bg-black/40 backdrop-blur-xl transition-all appearance-none cursor-pointer shadow-inner min-w-[100px]";
-  const iosButtonPrimaryClass = "w-full py-4 bg-white text-black rounded-full font-bold text-lg hover:bg-gray-100 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-white/10 flex items-center justify-center gap-2";
+  
+  // Updated Button Styles - Liquid Gradient
+  const iosButtonPrimaryClass = "w-full py-4 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-full font-bold text-lg hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] active:scale-[0.98] transition-all shadow-[0_10px_30px_rgba(99,102,241,0.3)] border border-white/20 flex items-center justify-center gap-2 relative overflow-hidden after:absolute after:inset-0 after:bg-linear-to-t after:from-black/10 after:to-transparent after:pointer-events-none";
+  
   const iosButtonSecondaryClass = "w-full py-4 bg-[#2c2c2e]/80 text-white rounded-full font-semibold text-lg hover:bg-[#3a3a3c] hover:scale-[1.02] active:scale-[0.98] transition-all border border-white/5 flex items-center justify-center gap-2 backdrop-blur-md";
 
   return (
@@ -332,8 +335,8 @@ export default function RegisteredPage() {
       <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[60%] bg-blue-600/20 rounded-full blur-[150px] animate-pulse-slow pointer-events-none mix-blend-screen" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[80%] h-[60%] bg-purple-600/20 rounded-full blur-[150px] animate-pulse-slow delay-1000 pointer-events-none mix-blend-screen" />
 
-      <div className="flex-1 flex flex-col items-center justify-center py-8 px-4 relative z-10 overflow-y-auto">
-        <div className="w-full max-w-md space-y-8">
+      <div className="flex-1 flex flex-col items-center py-8 px-4 relative z-10 overflow-y-auto">
+        <div className="w-full max-w-md space-y-8 pb-12">
 
         {/* Header */}
         <div className="text-center space-y-6 animate-fade-in">
@@ -726,7 +729,7 @@ export default function RegisteredPage() {
           </div>
         )}
       </div>
-
+      
       </div>
       <Footer />
     </div>
