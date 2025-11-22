@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { PhotoPermission } from '@/lib/types';
 import { Home, ScanFace, Images } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export function BottomNav() {
     const pathname = usePathname();
@@ -45,8 +46,8 @@ export function BottomNav() {
     if (visibleItems.length === 0) return null;
 
     return (
-        <div className="fixed bottom-14 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none md:hidden">
-            <nav className="glass rounded-full px-2 py-2 flex items-center gap-1 pointer-events-auto shadow-2xl ring-1 ring-white/10 animate-slide-up">
+        <div className="fixed bottom-8 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none md:hidden">
+            <nav className="bg-[#0a0a0a]/80 backdrop-blur-[50px] saturate-150 rounded-[2rem] px-6 py-3 flex items-center gap-6 pointer-events-auto shadow-[0_0_50px_-10px_rgba(0,0,0,0.5)] border border-white/10 ring-1 ring-white/5 animate-slide-up">
                 {visibleItems.map((item) => {
                     const isActive = pathname === item.href;
                     return (
@@ -54,17 +55,24 @@ export function BottomNav() {
                             key={item.href}
                             href={item.href}
                             className={cn(
-                                "relative w-12 h-12 flex items-center justify-center rounded-full transition-all duration-500",
-                                isActive ? "text-white" : "text-muted-foreground hover:text-white"
+                                "relative w-12 h-12 flex items-center justify-center rounded-full transition-colors duration-500",
+                                isActive ? "text-white" : "text-white/40 hover:text-white"
                             )}
                         >
                             {isActive && (
-                                <div className="absolute inset-0 bg-primary/20 rounded-full blur-md animate-pulse-slow" />
+                                <motion.div
+                                    layoutId="active-nav-pill"
+                                    className="absolute inset-0 bg-linear-to-b from-white/20 to-white/5 rounded-full border border-white/20 shadow-[inset_0_0_15px_rgba(255,255,255,0.1)]"
+                                    transition={{
+                                        type: "spring",
+                                        stiffness: 300,
+                                        damping: 30
+                                    }}
+                                >
+                                    <div className="absolute inset-0 bg-white/10 rounded-full blur-xl" />
+                                </motion.div>
                             )}
-                            {isActive && (
-                                <div className="absolute inset-0 bg-linear-to-tr from-primary/40 to-accent/40 rounded-full shadow-inner" />
-                            )}
-                            <span className={cn("relative z-10 text-xl transition-transform duration-300", isActive ? "scale-110" : "scale-100")}>
+                            <span className={cn("relative z-10 transition-all duration-300", isActive ? "scale-110 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]" : "scale-100")}>
                                 {item.icon}
                             </span>
                         </Link>

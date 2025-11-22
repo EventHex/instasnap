@@ -338,69 +338,65 @@ export default function RegisteredPage() {
 
         {/* Mode Selection */}
         {step === 'mode' && (
-          <div className="grid md:grid-cols-2 gap-6 animate-fade-in">
+          <div className="flex flex-col gap-4 w-full max-w-md mx-auto animate-fade-in">
+            {/* Existing User Card */}
             <div
               onClick={() => {
                 setIsNewUser(false);
                 setStep('mobile');
               }}
-              className="group cursor-pointer transform transition-transform duration-500 hover:scale-105"
+              className="group block transform transition-transform duration-500 hover:scale-105 active:scale-95 cursor-pointer"
             >
-              <Card className="border-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 backdrop-blur-3xl shadow-[0_0_50px_-10px_rgba(99,102,241,0.3)] hover:shadow-[0_0_80px_-20px_rgba(99,102,241,0.5)] overflow-hidden relative rounded-[2.5rem] h-full">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
-                <CardContent className="p-12 flex flex-col items-center text-center space-y-8 relative z-10">
-                  <div className="w-24 h-24 rounded-[2rem] bg-linear-to-tr from-white/20 to-white/5 backdrop-blur-md flex items-center justify-center text-5xl shadow-inner ring-1 ring-white/20 animate-float">
-                    <Lock className="w-12 h-12 text-white" />
-                  </div>
-                  <div className="space-y-3">
-                    <h2 className="text-3xl font-bold text-white tracking-tight">Existing User</h2>
-                    <p className="text-indigo-100/80 text-base font-light">
-                      Already have an account? Login with your mobile number.
-                    </p>
-                  </div>
-                  <div className="pt-4 w-full">
-                    <div className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 shadow-lg group-hover:shadow-indigo-500/20">
-                      Login Now <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center p-3 pr-4 bg-white/5 hover:bg-white/10 backdrop-blur-2xl border border-white/10 rounded-full transition-all duration-500 group-hover:border-white/20 group-hover:shadow-[0_0_40px_-10px_rgba(148,163,184,0.3)] relative overflow-hidden w-full">
+                 <div className="absolute inset-0 bg-linear-to-r from-slate-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                 
+                 <div className="w-12 h-12 rounded-full bg-linear-to-tr from-white/10 to-white/5 flex items-center justify-center text-xl shadow-inner ring-1 ring-white/20 shrink-0">
+                    <Lock className="w-6 h-6 text-white" />
+                 </div>
+                 
+                 <div className="flex-1 px-4 text-left">
+                    <h2 className="text-lg font-bold text-white tracking-tight">Existing User</h2>
+                    <p className="text-slate-200/60 text-xs font-light">Already have an account?</p>
+                 </div>
+                 
+                 <div className="px-5 py-2 rounded-full bg-white/10 group-hover:bg-white/20 text-white text-sm font-semibold transition-all duration-300 flex items-center gap-2 shrink-0">
+                    Login <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                 </div>
+              </div>
             </div>
 
+            {/* New User Card */}
             <div
               onClick={() => {
                 setIsNewUser(true);
                 setStep('register');
               }}
-              className="group cursor-pointer transform transition-transform duration-500 hover:scale-105"
+              className="group block transform transition-transform duration-500 hover:scale-105 active:scale-95 cursor-pointer"
             >
-              <Card className="border-0 bg-gradient-to-br from-purple-500/20 to-pink-500/20 backdrop-blur-3xl shadow-[0_0_50px_-10px_rgba(168,85,247,0.3)] hover:shadow-[0_0_80px_-20px_rgba(168,85,247,0.5)] overflow-hidden relative rounded-[2.5rem] h-full">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
-                <CardContent className="p-12 flex flex-col items-center text-center space-y-8 relative z-10">
-                  <div className="w-24 h-24 rounded-[2rem] bg-linear-to-tr from-white/20 to-white/5 backdrop-blur-md flex items-center justify-center text-5xl shadow-inner ring-1 ring-white/20 animate-float">
-                    <Sparkles className="w-12 h-12 text-white" />
-                  </div>
-                  <div className="space-y-3">
-                    <h2 className="text-3xl font-bold text-white tracking-tight">New User</h2>
-                    <p className="text-purple-100/80 text-base font-light">
-                      First time here? Create a new account to get started.
-                    </p>
-                  </div>
-                  <div className="pt-4 w-full">
-                    <div className="w-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white py-4 rounded-2xl font-semibold transition-all duration-300 flex items-center justify-center gap-3 shadow-lg group-hover:shadow-purple-500/20">
-                      Register Now <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div className="flex items-center p-3 pr-4 bg-white/5 hover:bg-white/10 backdrop-blur-2xl border border-white/10 rounded-full transition-all duration-500 group-hover:border-white/20 group-hover:shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)] relative overflow-hidden w-full">
+                 <div className="absolute inset-0 bg-linear-to-r from-indigo-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                 
+                 <div className="w-12 h-12 rounded-full bg-linear-to-tr from-white/10 to-white/5 flex items-center justify-center text-xl shadow-inner ring-1 ring-white/20 shrink-0">
+                    <Sparkles className="w-6 h-6 text-white" />
+                 </div>
+                 
+                 <div className="flex-1 px-4 text-left">
+                    <h2 className="text-lg font-bold text-white tracking-tight">New User</h2>
+                    <p className="text-indigo-100/60 text-xs font-light">First time here?</p>
+                 </div>
+                 
+                 <div className="px-5 py-2 rounded-full bg-white/10 group-hover:bg-white/20 text-white text-sm font-semibold transition-all duration-300 flex items-center gap-2 shrink-0">
+                    Register <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                 </div>
+              </div>
             </div>
           </div>
         )}
 
         {/* Registration Form */}
         {step === 'register' && (
-          <Card className="border-0 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-3xl shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 via-pink-500/10 to-indigo-500/10 opacity-50" />
+          <Card className="bg-[#0a0a0a]/60 backdrop-blur-[50px] saturate-150 shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in border border-white/10 ring-1 ring-white/5">
+            <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-30" />
             <CardContent className="p-12 space-y-8 relative z-10">
               
               <div className="space-y-6">
@@ -411,7 +407,7 @@ export default function RegisteredPage() {
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     placeholder="Enter your full name"
-                    className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-white/30 backdrop-blur-xl transition-all"
+                    className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
                   />
                 </div>
 
@@ -422,7 +418,7 @@ export default function RegisteredPage() {
                     value={emailId}
                     onChange={(e) => setEmailId(e.target.value)}
                     placeholder="your.email@example.com"
-                    className="w-full px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-white/30 backdrop-blur-xl transition-all"
+                    className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
                   />
                 </div>
 
@@ -432,7 +428,7 @@ export default function RegisteredPage() {
                     <select
                       value={countryCode}
                       onChange={(e) => setCountryCode(e.target.value)}
-                      className="px-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-white/30 backdrop-blur-xl transition-all"
+                      className="px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
                     >
                       <option value="+91" className="bg-gray-900">+91</option>
                       <option value="+1" className="bg-gray-900">+1</option>
@@ -444,7 +440,7 @@ export default function RegisteredPage() {
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       placeholder="9876543210"
-                      className="flex-1 px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-white/30 backdrop-blur-xl transition-all"
+                      className="flex-1 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
                     />
                   </div>
                 </div>
@@ -455,7 +451,7 @@ export default function RegisteredPage() {
                     onClick={() => registerSelfieInputRef.current?.click()}
                     className="relative group cursor-pointer w-full aspect-square max-w-xs mx-auto rounded-[2rem] flex items-center justify-center transition-all duration-500 hover:scale-105"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent rounded-[2rem] border border-white/20 group-hover:border-white/40 transition-colors shadow-inner" />
+                    <div className="absolute inset-0 bg-linear-to-br from-white/10 to-transparent rounded-[2rem] border border-white/20 group-hover:border-white/40 transition-colors shadow-inner" />
 
                     {registerSelfiePreview ? (
                       <div className="relative w-full h-full rounded-[2rem] overflow-hidden shadow-2xl ring-1 ring-white/20">
@@ -527,8 +523,8 @@ export default function RegisteredPage() {
 
         {/* Mobile Number Entry */}
         {step === 'mobile' && (
-          <Card className="border-0 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-3xl shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 opacity-50" />
+          <Card className="bg-[#0a0a0a]/60 backdrop-blur-[50px] saturate-150 shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in border border-white/10 ring-1 ring-white/5">
+            <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-30" />
             <CardContent className="p-12 space-y-8 relative z-10">
               
               <div className="space-y-3">
@@ -537,7 +533,7 @@ export default function RegisteredPage() {
                   <select
                     value={countryCode}
                     onChange={(e) => setCountryCode(e.target.value)}
-                    className="px-4 py-4 bg-white/10 border border-white/20 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-white/30 backdrop-blur-xl transition-all"
+                    className="px-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
                   >
                     <option value="+91" className="bg-gray-900">+91</option>
                     <option value="+1" className="bg-gray-900">+1</option>
@@ -549,7 +545,7 @@ export default function RegisteredPage() {
                     value={mobile}
                     onChange={(e) => setMobile(e.target.value)}
                     placeholder="9876543210"
-                    className="flex-1 px-6 py-4 bg-white/10 border border-white/20 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-white/30 backdrop-blur-xl transition-all text-lg"
+                    className="flex-1 px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all text-lg"
                   />
                 </div>
                 <p className="text-xs text-white/40 font-light">We'll send you an OTP to verify your number</p>
@@ -594,8 +590,8 @@ export default function RegisteredPage() {
 
         {/* OTP Entry */}
         {step === 'otp' && (
-          <Card className="border-0 bg-gradient-to-br from-white/5 to-white/0 backdrop-blur-3xl shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in">
-            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 opacity-50" />
+          <Card className="bg-[#0a0a0a]/60 backdrop-blur-[50px] saturate-150 shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in border border-white/10 ring-1 ring-white/5">
+            <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-30" />
             <CardContent className="p-12 space-y-8 relative z-10">
               
               <div className="text-center space-y-2">
@@ -619,7 +615,7 @@ export default function RegisteredPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="w-14 h-16 bg-white/10 border border-white/20 rounded-2xl text-white text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-white/30 backdrop-blur-xl transition-all"
+                    className="w-14 h-16 bg-white/5 border border-white/10 rounded-2xl text-white text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-white/20 focus:border-white/20 backdrop-blur-xl transition-all"
                   />
                 ))}
               </div>
@@ -673,8 +669,8 @@ export default function RegisteredPage() {
 
         {/* Selfie Upload */}
         {step === 'selfie' && (
-          <Card className="border-0 bg-linear-to-br from-white/5 to-white/0 backdrop-blur-3xl shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in">
-            <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 opacity-50" />
+          <Card className="bg-[#0a0a0a]/60 backdrop-blur-[50px] saturate-150 shadow-2xl overflow-hidden relative rounded-[2.5rem] animate-fade-in border border-white/10 ring-1 ring-white/5">
+            <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-30" />
             <CardContent className="p-12 flex flex-col items-center space-y-8 relative z-10">
               
               <div
@@ -751,8 +747,8 @@ export default function RegisteredPage() {
         {/* Photos Grid */}
         {step === 'photos' && (
           <div className="space-y-8 animate-fade-in">
-            <Card className="border-0 bg-linear-to-br from-white/5 to-white/0 backdrop-blur-3xl shadow-2xl overflow-hidden relative rounded-[2.5rem]">
-              <div className="absolute inset-0 bg-linear-to-br from-indigo-500/10 via-purple-500/10 to-pink-500/10 opacity-50" />
+            <Card className="bg-[#0a0a0a]/60 backdrop-blur-[50px] saturate-150 shadow-2xl overflow-hidden relative rounded-[2.5rem] border border-white/10 ring-1 ring-white/5">
+              <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-30" />
               <CardContent className="p-8 relative z-10">
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
@@ -820,8 +816,8 @@ export default function RegisteredPage() {
             </div>
 
             {results.length === 0 && (
-              <Card className="border-0 bg-linear-to-br from-white/5 to-white/0 backdrop-blur-3xl shadow-2xl overflow-hidden relative rounded-[2.5rem]">
-                <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-50" />
+              <Card className="bg-[#0a0a0a]/60 backdrop-blur-[50px] saturate-150 shadow-2xl overflow-hidden relative rounded-[2.5rem] border border-white/10 ring-1 ring-white/5">
+                <div className="absolute inset-0 bg-linear-to-br from-white/5 to-transparent opacity-30" />
                 <CardContent className="p-12 text-center space-y-4 relative z-10">
                   <div className="flex justify-center mb-4">
                     <Camera className="w-16 h-16 text-white/60" />
