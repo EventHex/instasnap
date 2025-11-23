@@ -121,9 +121,17 @@ export function Navbar() {
                                 ? "bg-white/10 text-white shadow-inner"
                                 : "text-muted-foreground hover:text-white hover:bg-white/5"
                         )}>
-                            Gallery
+                            Highlights
                         </Link>
                     )}
+                    <Link href="/photos" className={cn(
+                        "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300",
+                        pathname === '/photos'
+                            ? "bg-white/10 text-white shadow-inner"
+                            : "text-muted-foreground hover:text-white hover:bg-white/5"
+                    )}>
+                        Photos
+                    </Link>
                     {isAuthenticated && (
                         <>
                             <Link href="/registered" className={cn(

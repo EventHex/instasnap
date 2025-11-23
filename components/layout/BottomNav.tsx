@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import { storage } from '@/lib/storage';
 import { PhotoPermission } from '@/lib/types';
-import { Home, ScanFace, Images, User, LogOut } from 'lucide-react';
+import { Home, ScanFace, Images, User, LogOut, ImageIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function BottomNav() {
@@ -51,7 +51,8 @@ export function BottomNav() {
     const navItems = [
         { href: '/', icon: <Home className="w-6 h-6" />, label: 'Home', show: true, isButton: false },
         { href: '/anonymous', icon: <ScanFace className="w-6 h-6" />, label: 'Find', show: showAnonymous, isButton: false },
-        { href: '/gallery', icon: <Images className="w-6 h-6" />, label: 'Gallery', show: showHighlights, isButton: false },
+        { href: '/photos', icon: <ImageIcon className="w-6 h-6" />, label: 'Photos', show: true, isButton: false },
+        { href: '/gallery', icon: <Images className="w-6 h-6" />, label: 'Highlights', show: showHighlights, isButton: false },
         { href: '/registered', icon: <User className="w-6 h-6" />, label: 'My Photos', show: isAuthenticated, isButton: false },
         { href: '#', icon: <LogOut className="w-6 h-6" />, label: 'Logout', show: isAuthenticated, isButton: true, onClick: () => setShowLogoutDialog(true) },
     ];

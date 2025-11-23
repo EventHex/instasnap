@@ -264,6 +264,28 @@ class InstaSnapAPI {
     };
   }
 
+  async getAllEventPhotos(eventId: string, page = 1, limit = 50): Promise<EventHighlightsResponse> {
+    const response = await fetch(
+      `${API_BASE}/api/v1/insta-snap/event-images?event=${eventId}&page=${page}&limit=${limit}`
+    );
+
+    const data = await this.handleResponse<EventHighlightsResponse>(response);
+
+    // Transform relative paths to full S3 URLs
+    const S3_BASE = 'https://event-hex-saas.s3.us-east-1.amazonaws.com';
+    const transformedResponse = data.response.map((photo) => ({
+      ...photo,
+      image: photo.image.startsWith('http') ? photo.image : `${S3_BASE}/${photo.image}`,
+      compressed: photo.compressed.startsWith('http') ? photo.compressed : `${S3_BASE}/${photo.compressed}`,
+      thumbnail: photo.thumbnail.startsWith('http') ? photo.thumbnail : `${S3_BASE}/${photo.thumbnail}`,
+    }));
+
+    return {
+      ...data,
+      response: transformedResponse,
+    };
+  }
+
   async getUserMatches(userId: string, eventId: string): Promise<{ success: boolean; matches: any[]; count: number }> {
     const response = await fetch(
       `${API_BASE}/api/v1/mobile/instasnap/user-matches?userId=${userId}&eventId=${eventId}`
