@@ -792,37 +792,57 @@ export default function RegisteredPage() {
         {/* Photos Grid */}
         {step === 'photos' && (
           <div className="space-y-6 animate-fade-in w-full">
-            {/* Welcome Section - Mobile only */}
-            <div className="md:hidden text-center mb-4">
-              <h1 className="text-3xl font-bold text-white mb-2">
-                Welcome back, <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400">{firstName}!</span>
-              </h1>
-              <p className="text-white/60 text-sm">Found {results.length} photo{results.length !== 1 ? 's' : ''} with you</p>
-            </div>
-
-            {/* Stats Card */}
-            <div className="glass p-6 md:p-8">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-linear-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-white/10">
-                    <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-white" />
+            {/* Hero Welcome Section */}
+            <div className="relative overflow-hidden rounded-3xl glass p-8 md:p-12">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+              
+              <div className="relative z-10 space-y-6">
+                {/* Welcome Message */}
+                <div className="text-center md:text-left space-y-3">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-xl">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    <span className="text-sm font-medium text-white/80">Active Session</span>
                   </div>
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
-                      Hey {firstName}! 👋
-                    </h2>
-                    <p className="text-white/60 font-light text-sm md:text-base">{results.length} photo{results.length !== 1 ? 's' : ''} found in your collection</p>
-                  </div>
+                  
+                  <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
+                    Welcome back,{' '}
+                    <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400 animate-shimmer bg-size-[200%_auto]">
+                      {firstName}!
+                    </span>
+                  </h1>
+                  
+                  <p className="text-lg text-white/60 font-light max-w-2xl">
+                    Your AI-powered photo collection is ready. We&apos;ve found {results.length} memorable moment{results.length !== 1 ? 's' : ''} featuring you.
+                  </p>
                 </div>
-                <div className="flex flex-wrap justify-center gap-3 w-full md:w-auto">
-                  <button
-                    onClick={handleSmartMatchAgain}
-                    disabled={loading}
-                    className="px-6 py-3 bg-linear-to-br from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-white rounded-2xl font-semibold text-sm border border-purple-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 backdrop-blur-xl"
-                  >
-                    <Sparkles className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                    Find More
-                  </button>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
+                        <ImageIcon className="w-5 h-5 text-indigo-400" />
+                      </div>
+                      <div>
+                        <p className="text-2xl font-bold text-white">{results.length}</p>
+                        <p className="text-xs text-white/60 font-medium">Photos Found</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl">
+                    <button
+                      onClick={handleSmartMatchAgain}
+                      disabled={loading}
+                      className="w-full h-full flex items-center justify-center gap-2 text-white font-semibold hover:scale-105 active:scale-95 transition-all group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-linear-to-br from-pink-500/30 to-purple-500/30 flex items-center justify-center group-hover:from-pink-500/40 group-hover:to-purple-500/40 transition-all">
+                        <Sparkles className={`w-5 h-5 text-pink-400 ${loading ? 'animate-spin' : ''}`} />
+                      </div>
+                      <span className="text-sm">Find More Photos</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -868,7 +888,7 @@ export default function RegisteredPage() {
                   </div>
                   <h3 className="text-2xl font-bold text-white">No Photos Found</h3>
                   <p className="text-white/60 font-light max-w-md mx-auto">
-                    We couldn't find any photos matching your selfie.
+                    We couldn&apos;t find any photos matching your selfie.
                   </p>
                   <div className="pt-4">
                     <button
