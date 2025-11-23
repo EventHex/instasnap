@@ -104,14 +104,22 @@ export default function RegisteredPage() {
     setError(null);
 
     try {
-      // Try to send OTP. If it fails, we assume user needs to register.
+      // Try to send OTP. If it fails, check if registration is allowed.
       await api.sendOTP(mobile, eventId, countryCode);
       setUserMobile(mobile);
       setStep('otp');
     } catch (err: any) {
-      // If sending OTP fails, assume user is not registered
+      // If sending OTP fails, check if registration is allowed
+      const access = photoPermission?.photoViewAccess;
+      if (access === 'Attendees') {
+        // Attendees mode: No registration allowed, only login for existing users
+        setError('This number is not registered. Registration is restricted to attendees only.');
+        return;
+      }
+      
+      // For Everyone/Public, allow registration
       setIsRegistering(true);
-      setError(null); // Clear error to show registration form cleanly
+      setError(null);
     } finally {
       setLoading(false);
     }

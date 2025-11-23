@@ -32,7 +32,7 @@ export function BottomNav() {
     }, [eventId]);
 
     const access = photoPermission?.photoViewAccess;
-    const showAnonymous = access !== 'Everyone' && access !== 'Attendees';
+    const showAnonymous = access === 'Public';
     const showHighlights = photoPermission?.enableEventHighlights === true;
 
     const navItems = [

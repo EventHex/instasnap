@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Footer } from '@/components/layout/Footer';
-import { ScanFace, Lock, ArrowRight } from 'lucide-react';
+import { ScanFace, Lock, ArrowRight, Images } from 'lucide-react';
 
 export default function HomePage() {
   const [photoPermission, setPhotoPermission] = useState<PhotoPermission | null>(null);
@@ -34,13 +34,16 @@ export default function HomePage() {
   }, [eventId]);
 
   const access = photoPermission?.photoViewAccess;
-  const isPublic = access === 'Public' || access === 'Everyone';
-  const showAnonymous = access !== 'Everyone' && access !== 'Attendees';
 
-  // Determine Primary Action
-  let primaryAction = 'login';
-  if (showAnonymous) {
-    primaryAction = 'match';
+  // Determine Primary Action based on photoViewAccess (matching specification table)
+  let primaryAction: 'login' | 'match' | 'gallery' = 'login'; // Default
+  
+  if (access === 'Public') {
+    primaryAction = 'match'; // Show Quick Match for Public
+  } else if (access === 'Everyone') {
+    primaryAction = 'gallery'; // Direct gallery access for Everyone (no Quick Match)
+  } else {
+    primaryAction = 'login'; // Show login for Attendees
   }
 
   if (loading) {
@@ -78,6 +81,8 @@ export default function HomePage() {
           <p className="text-base md:text-xl text-white/60 max-w-xl mx-auto text-balance font-light leading-relaxed text-center">
             {primaryAction === 'match'
               ? "Upload a selfie and let our liquid AI find every photo you're in."
+              : primaryAction === 'gallery'
+              ? "Browse all event photos freely. No login required."
               : "Login to access your personalized photo collection from the event."}
           </p>
         </div>
@@ -100,6 +105,27 @@ export default function HomePage() {
                  
                  <div className="px-5 py-2 rounded-full bg-white/10 group-hover:bg-white/20 text-white text-sm font-semibold transition-all duration-300 flex items-center gap-2 shrink-0">
                     Scan <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                 </div>
+              </div>
+            </Link>
+          )}
+
+          {primaryAction === 'gallery' && (
+            <Link href="/gallery" className="group block transform transition-transform duration-500 hover:scale-105 active:scale-95">
+              <div className="flex items-center p-3 pr-4 bg-white/5 hover:bg-white/10 backdrop-blur-2xl border border-white/10 rounded-full transition-all duration-500 group-hover:border-white/20 group-hover:shadow-[0_0_40px_-10px_rgba(34,197,94,0.3)] relative overflow-hidden w-full">
+                 <div className="absolute inset-0 bg-linear-to-r from-green-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                 
+                 <div className="w-12 h-12 rounded-full bg-linear-to-tr from-white/10 to-white/5 flex items-center justify-center text-xl shadow-inner ring-1 ring-white/20 shrink-0">
+                    <Images className="w-6 h-6 text-white" />
+                 </div>
+                 
+                 <div className="flex-1 px-4 text-left">
+                    <h2 className="text-lg font-bold text-white tracking-tight">View Gallery</h2>
+                    <p className="text-green-100/60 text-xs font-light">Browse all event photos</p>
+                 </div>
+                 
+                 <div className="px-5 py-2 rounded-full bg-white/10 group-hover:bg-white/20 text-white text-sm font-semibold transition-all duration-300 flex items-center gap-2 shrink-0">
+                    Browse <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                  </div>
               </div>
             </Link>
@@ -129,14 +155,14 @@ export default function HomePage() {
 
         {/* Bottom Section: Secondary Actions */}
         <div className="flex flex-col items-center gap-4 animate-fade-in delay-200 w-full">
-          {primaryAction !== 'login' && (
+          {access === 'Everyone' && (
             <div className="text-center space-y-3 md:space-y-4 w-full">
               <p className="text-xs md:text-sm text-white/40 font-light tracking-wide">
                 {primaryAction === 'gallery' ? 'Have a personal account?' : 'Already have an account?'}
               </p>
               <Link href="/registered" className="block w-full max-w-xs mx-auto">
                 <Button variant="outline" className="w-full border-white/10 hover:bg-white/10 hover:border-white/20 rounded-full h-12 md:h-14 text-base md:text-lg backdrop-blur-md">
-                  Member Login
+                  Browse your photos
                 </Button>
               </Link>
             </div>
