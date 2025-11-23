@@ -28,7 +28,7 @@ export function Sidebar() {
     return (
         <div className="hidden md:flex flex-col w-64 fixed inset-y-0 left-0 border-r border-border bg-white/50 backdrop-blur-xl z-50">
             <div className="p-6">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-indigo-500 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-linear-to-r from-primary to-indigo-500 bg-clip-text text-transparent">
                     InstaSnap
                 </h1>
             </div>
@@ -50,7 +50,7 @@ export function Sidebar() {
             </nav>
 
             <div className="p-4 border-t border-border">
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-4">
+                <div className="bg-linear-to-r from-indigo-50 to-purple-50 rounded-xl p-4">
                     <p className="text-xs font-medium text-indigo-900 mb-1">Event Status</p>
                     <div className="flex items-center space-x-2">
                         <span className="relative flex h-2 w-2">
