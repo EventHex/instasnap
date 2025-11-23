@@ -76,9 +76,22 @@ export interface OTPResponse {
 }
 
 export interface VerifyOTPResponse {
+  success: boolean;
   message: string;
   token?: string;
+  refreshToken?: string;
   userId?: string;
+  user?: {
+    _id: string;
+    firstName: string;
+    fullName: string;
+    authenticationId: string;
+    emailId: string;
+    phoneCode: string;
+    event: string;
+    awsKeyImage?: string;
+    formattedTicketNumber?: string;
+  };
   mobile?: string;
   verified?: boolean;
   requiresSelfie?: boolean;

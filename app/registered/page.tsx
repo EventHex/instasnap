@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { storage } from '@/lib/storage';
 import { FaceMatch, PhotoPermission } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -46,6 +47,7 @@ export default function RegisteredPage() {
   const [userId, setUserId] = useState<string | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [userMobile, setUserMobile] = useState<string | null>(null);
+  const [userData, setUserData] = useState<any>(null);
   
   // UI state
   const [loading, setLoading] = useState(false);
@@ -54,6 +56,48 @@ export default function RegisteredPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const registerSelfieInputRef = useRef<HTMLInputElement>(null);
   const eventId = process.env.NEXT_PUBLIC_EVENT_ID || '';
+
+  // Check authentication and load user photos on mount
+  useEffect(() => {
+    const loadAuthenticatedUser = async () => {
+      const isAuth = storage.isAuthenticated();
+      const storedUserData = storage.getUserData();
+      const storedToken = storage.getAuthToken();
+      const storedPhotos = storage.getMatchedPhotos();
+
+      if (isAuth && storedUserData && storedToken) {
+        setUserData(storedUserData);
+        setUserId(storedUserData._id);
+        setToken(storedToken);
+        setUserMobile(storedUserData.authenticationId);
+        setFirstName(storedUserData.firstName || storedUserData.fullName);
+        
+        // Load existing matched photos
+        if (storedPhotos && storedPhotos.length > 0) {
+          setResults(storedPhotos);
+          setStep('photos');
+        } else {
+          // Fetch from API
+          try {
+            const response = await api.getUserMatches(storedUserData._id, eventId);
+            if (response.success && response.matches && response.matches.length > 0) {
+              setResults(response.matches);
+              storage.setMatchedPhotos(response.matches);
+              setStep('photos');
+            } else {
+              // User is logged in but has no photos yet
+              setStep('selfie');
+            }
+          } catch (error) {
+            console.error('Failed to fetch user matches:', error);
+            setStep('selfie');
+          }
+        }
+      }
+    };
+
+    loadAuthenticatedUser();
+  }, [eventId]);
 
   useEffect(() => {
     const fetchPhotoPermission = async () => {
@@ -200,20 +244,55 @@ export default function RegisteredPage() {
     try {
       const response = await api.verifyOTP(userMobile, otpString, eventId, countryCode);
       
-      if (response.verified && response.token && response.userId) {
+      if (response.success && response.token && response.userId && response.user) {
+        // Store authentication data
+        storage.setAuthToken(response.token);
+        if (response.refreshToken) {
+          storage.setRefreshToken(response.refreshToken);
+        }
+        storage.setUserData(response.user);
+        
         setToken(response.token);
         setUserId(response.userId);
+        setUserData(response.user);
+        setFirstName(response.user.firstName || response.user.fullName);
         
-        // Check if user needs to upload selfie or already has photos
-        if (response.requiresSelfie) {
-          setStep('selfie');
-        } else if (response.photos && response.photos.length > 0) {
-          setResults(response.photos);
-          setGroupId(response.groupId || null);
-          setStep('photos');
-        } else {
-          setStep('selfie');
+        // SMART FLOW: Check if user already has photos matched during registration
+        console.log('[OTP] Checking for existing matches...');
+        try {
+          const matchesResponse = await api.getUserMatches(response.userId, eventId);
+          if (matchesResponse.success && matchesResponse.matches && matchesResponse.matches.length > 0) {
+            console.log(`[OTP] User already has ${matchesResponse.matches.length} matched photos!`);
+            setResults(matchesResponse.matches);
+            storage.setMatchedPhotos(matchesResponse.matches);
+            setStep('photos');
+            return;
+          }
+        } catch (err) {
+          console.log('[OTP] No existing matches found');
         }
+        
+        // Check if user has awsKeyImage stored (uploaded during registration)
+        if (response.user.awsKeyImage) {
+          console.log('[OTP] User has awsKeyImage but no matches - running initial match...');
+          try {
+            // Run AWS match using stored awsKeyImage (no file upload needed!)
+            const matchResponse = await api.matchRegistered(userMobile, eventId, response.userId, response.token, undefined, true);
+            if (matchResponse.success && matchResponse.matched && matchResponse.FaceMatches && matchResponse.FaceMatches.length > 0) {
+              console.log(`[OTP] Found ${matchResponse.FaceMatches.length} photos using stored selfie!`);
+              setResults(matchResponse.FaceMatches);
+              storage.setMatchedPhotos(matchResponse.FaceMatches);
+              setStep('photos');
+              return;
+            }
+          } catch (matchErr) {
+            console.log('[OTP] Match attempt failed, will show selfie upload');
+          }
+        }
+        
+        // No matches and no awsKeyImage - user needs to upload selfie
+        console.log('[OTP] No matches or awsKeyImage - directing to selfie upload');
+        setStep('selfie');
       } else {
         setError(response.error || 'Invalid OTP. Please try again.');
       }
@@ -252,11 +331,90 @@ export default function RegisteredPage() {
       const response = await api.matchRegistered(userMobile, eventId, userId, token, file);
       
       if (response.success && response.matched) {
-        setResults(response.FaceMatches || []);
+        const matches = response.FaceMatches || [];
+        setResults(matches);
         setGroupId(response.groupInfo?.groupId || response.groupId || null);
+        
+        // Save matched photos to storage
+        storage.setMatchedPhotos(matches);
+        
         setStep('photos');
       } else {
         setError(response.message || 'No matching photos found. Please try a different selfie.');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to match photos. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle refresh to get new photos from admin uploads
+  const handleRefreshPhotos = async () => {
+    if (!userId || !eventId) {
+      setError('User information not found');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await api.getUserMatches(userId, eventId);
+      if (response.success && response.matches) {
+        const newMatches = response.matches;
+        setResults(newMatches);
+        storage.setMatchedPhotos(newMatches);
+        
+        // Show success message if new photos found
+        const newPhotoCount = newMatches.length - results.length;
+        if (newPhotoCount > 0) {
+          console.log(`Found ${newPhotoCount} new photos!`);
+        } else {
+          console.log('No new photos found');
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to refresh photos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Smart Match Again - uses existing awsKeyImage, no upload needed!
+  const handleSmartMatchAgain = async () => {
+    if (!userMobile || !userId || !token) {
+      setError('User information not found');
+      return;
+    }
+
+    // Check if user has awsKeyImage
+    if (!userData?.awsKeyImage) {
+      setError('No stored image found. Please upload a selfie.');
+      setStep('selfie');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      console.log('[SmartMatch] Using stored awsKeyImage for re-matching with AWS...');
+      
+      // Call match API with forceRefresh=true to skip cache and run AWS matching
+      const response = await api.matchRegistered(userMobile, eventId, userId, token, undefined, true);
+      
+      if (response.success && response.matched) {
+        const matches = response.FaceMatches || [];
+        setResults(matches);
+        setGroupId(response.groupInfo?.groupId || response.groupId || null);
+        
+        // Save matched photos to storage
+        storage.setMatchedPhotos(matches);
+        
+        console.log(`[SmartMatch] Found ${matches.length} photos using stored image (AWS re-match)`);
+      } else {
+        setError(response.message || 'No matching photos found.');
       }
     } catch (err: any) {
       setError(err.message || 'Failed to match photos. Please try again.');
@@ -287,6 +445,9 @@ export default function RegisteredPage() {
 
   // Handle logout
   const handleLogout = () => {
+    // Clear all stored data
+    storage.clearAll();
+    
     setStep('mobile');
     setIsRegistering(false);
     setFirstName('');
@@ -356,13 +517,13 @@ export default function RegisteredPage() {
             </div>
           </Link>
           <h1 className="text-4xl font-medium tracking-tight text-white drop-shadow-2xl">
-            {step === 'photos' ? 'Your Gallery' : 'Member Access'}
+            {step === 'photos' ? (userData ? `Welcome back, ${firstName}!` : 'Your Gallery') : 'Member Access'}
           </h1>
           <p className="text-lg text-white/50 font-light">
             {step === 'mobile' && !isRegistering && 'Enter your mobile number to continue.'}
             {step === 'mobile' && isRegistering && 'Create your account to get started.'}
             {step === 'otp' && 'Enter the OTP sent to your mobile.'}
-            {step === 'selfie' && 'Upload a selfie to find your photos.'}
+            {step === 'selfie' && (userData ? 'Upload a new selfie to find more photos.' : 'Upload a selfie to find your photos.')}
             {step === 'photos' && `Found ${results.length} photo${results.length !== 1 ? 's' : ''} with you!`}
           </p>
         </div>
@@ -666,6 +827,22 @@ export default function RegisteredPage() {
                         Download All
                       </button>
                     )}
+                    <button
+                      onClick={handleRefreshPhotos}
+                      disabled={loading}
+                      className={`${iosButtonPrimaryClass} w-auto! px-8 bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/30`}
+                    >
+                      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                      {loading ? 'Checking...' : 'Check New Photos'}
+                    </button>
+                    <button
+                      onClick={handleSmartMatchAgain}
+                      disabled={loading}
+                      className={`${iosButtonPrimaryClass} w-auto! px-8 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border-purple-500/30`}
+                    >
+                      <Sparkles className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                      {loading ? 'Matching...' : 'Find More Photos'}
+                    </button>
                     <button
                       onClick={handleLogout}
                       className={`${iosButtonSecondaryClass} w-auto! px-8`}

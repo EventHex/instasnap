@@ -136,6 +136,7 @@ class InstaSnapAPI {
     userId: string,
     token: string,
     file?: File,
+    forceRefresh?: boolean,
     additionalData?: {
       name?: string;
       designation?: string;
@@ -150,6 +151,10 @@ class InstaSnapAPI {
 
     if (file) {
       formData.append('file', file);
+    }
+
+    if (forceRefresh) {
+      formData.append('forceRefresh', 'true');
     }
 
     if (additionalData) {
@@ -257,6 +262,13 @@ class InstaSnapAPI {
       ...data,
       response: transformedResponse,
     };
+  }
+
+  async getUserMatches(userId: string, eventId: string): Promise<{ success: boolean; matches: any[]; count: number }> {
+    const response = await fetch(
+      `${API_BASE}/api/v1/mobile/instasnap/user-matches?userId=${userId}&eventId=${eventId}`
+    );
+    return this.handleResponse<{ success: boolean; matches: any[]; count: number }>(response);
   }
 }
 

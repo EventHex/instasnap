@@ -3,12 +3,13 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { storage } from '@/lib/storage';
 import { AnonymousPhoto, PhotoPermission } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
-import { ArrowLeft, Camera, Download, ExternalLink, Sparkles, Search, UserPlus } from 'lucide-react';
+import { ArrowLeft, Camera, Download, ExternalLink, Sparkles, Search, UserPlus, RefreshCw } from 'lucide-react';
 
 export default function AnonymousMatchPage() {
   const router = useRouter();
@@ -85,6 +86,9 @@ export default function AnonymousMatchPage() {
       const response = await api.matchAnonymous(file, eventId);
       if (response.success) {
         setResults(response.photos);
+        // Store selfie for "Find More Photos" feature
+        storage.setAnonymousSelfie(file);
+        console.log('[Anonymous] Stored selfie for later re-matching');
       } else {
         setError(response.message || 'No matches found');
       }
@@ -94,6 +98,33 @@ export default function AnonymousMatchPage() {
     } finally {
       setLoading(false);
       setSearched(true);
+    }
+  };
+
+  // Find More Photos using stored selfie
+  const handleFindMore = async () => {
+    const storedSelfie = storage.getAnonymousSelfie();
+    if (!storedSelfie || !eventId) {
+      setError('No stored selfie found. Please upload again.');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('[Anonymous] Re-matching with stored selfie...');
+      const response = await api.matchAnonymous(storedSelfie, eventId);
+      if (response.success) {
+        setResults(response.photos);
+        console.log(`[Anonymous] Found ${response.photos.length} photos using stored selfie`);
+      } else {
+        setError(response.message || 'No matches found');
+      }
+    } catch (err) {
+      setError('Failed to search for photos. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -232,6 +263,16 @@ export default function AnonymousMatchPage() {
                         >
                           <Download className="w-4 h-4" />
                           Download All
+                        </button>
+                      )}
+                      {storage.hasAnonymousSelfie() && (
+                        <button
+                          onClick={handleFindMore}
+                          disabled={loading}
+                          className={`${iosButtonPrimaryClass} w-auto! px-8 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border-purple-500/30`}
+                        >
+                          <Sparkles className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                          {loading ? 'Finding...' : 'Find More Photos'}
                         </button>
                       )}
                       <button

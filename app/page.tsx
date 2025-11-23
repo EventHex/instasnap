@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
+import { storage } from '@/lib/storage';
 import { PhotoPermission } from '@/lib/types';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/Card';
@@ -10,6 +12,7 @@ import { Footer } from '@/components/layout/Footer';
 import { ScanFace, Lock, ArrowRight, Images } from 'lucide-react';
 
 export default function HomePage() {
+  const router = useRouter();
   const [photoPermission, setPhotoPermission] = useState<PhotoPermission | null>(null);
   const [loading, setLoading] = useState(true);
   const eventId = process.env.NEXT_PUBLIC_EVENT_ID || '';

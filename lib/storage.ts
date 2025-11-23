@@ -5,6 +5,11 @@ const STORAGE_KEYS = {
   GROUP_ID: 'instasnap_group_id',
   PHOTOS_CACHE: 'instasnap_photos_',
   USER_SESSION: 'instasnap_user_session',
+  AUTH_TOKEN: 'instasnap_auth_token',
+  REFRESH_TOKEN: 'instasnap_refresh_token',
+  USER_DATA: 'instasnap_user_data',
+  MATCHED_PHOTOS: 'instasnap_matched_photos',
+  ANONYMOUS_SELFIE: 'instasnap_anonymous_selfie', // Store anonymous user's selfie
 } as const;
 
 export const storage = {
@@ -95,6 +100,114 @@ export const storage = {
   clearUserSession(): void {
     if (typeof window === 'undefined') return;
     sessionStorage.removeItem(STORAGE_KEYS.USER_SESSION);
+  },
+
+  // Authenticated user data
+  getAuthToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  },
+
+  setAuthToken(token: string): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
+  },
+
+  getRefreshToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  },
+
+  setRefreshToken(token: string): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, token);
+  },
+
+  getUserData(): any | null {
+    if (typeof window === 'undefined') return null;
+    const userData = localStorage.getItem(STORAGE_KEYS.USER_DATA);
+    return userData ? JSON.parse(userData) : null;
+  },
+
+  setUserData(user: any): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
+  },
+
+  getMatchedPhotos(): any[] | null {
+    if (typeof window === 'undefined') return null;
+    const photos = localStorage.getItem(STORAGE_KEYS.MATCHED_PHOTOS);
+    return photos ? JSON.parse(photos) : null;
+  },
+
+  setMatchedPhotos(photos: any[]): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.MATCHED_PHOTOS, JSON.stringify(photos));
+  },
+
+  isAuthenticated(): boolean {
+    if (typeof window === 'undefined') return false;
+    return !!this.getAuthToken() && !!this.getUserData();
+  },
+
+  // Anonymous selfie storage (for "Find More Photos" feature)
+  getAnonymousSelfie(): File | null {
+    if (typeof window === 'undefined') return null;
+    const stored = sessionStorage.getItem(STORAGE_KEYS.ANONYMOUS_SELFIE);
+    if (!stored) return null;
+    
+    try {
+      const { dataUrl, name, type, size, timestamp } = JSON.parse(stored);
+      const ONE_HOUR = 60 * 60 * 1000;
+      
+      // Expire after 1 hour for security
+      if (Date.now() - timestamp > ONE_HOUR) {
+        this.clearAnonymousSelfie();
+        return null;
+      }
+      
+      // Convert base64 back to File
+      const arr = dataUrl.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8arr], name, { type: mime });
+    } catch {
+      return null;
+    }
+  },
+
+  setAnonymousSelfie(file: File): void {
+    if (typeof window === 'undefined') return;
+    
+    // Convert File to base64 for storage
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const dataUrl = reader.result as string;
+      const data = {
+        dataUrl,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        timestamp: Date.now(),
+      };
+      sessionStorage.setItem(STORAGE_KEYS.ANONYMOUS_SELFIE, JSON.stringify(data));
+    };
+    reader.readAsDataURL(file);
+  },
+
+  clearAnonymousSelfie(): void {
+    if (typeof window === 'undefined') return;
+    sessionStorage.removeItem(STORAGE_KEYS.ANONYMOUS_SELFIE);
+  },
+
+  hasAnonymousSelfie(): boolean {
+    if (typeof window === 'undefined') return false;
+    return !!sessionStorage.getItem(STORAGE_KEYS.ANONYMOUS_SELFIE);
   },
 
   // Clear all
