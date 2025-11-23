@@ -48,36 +48,27 @@ export default function GalleryPage() {
     if (node) observer.current.observe(node);
   }, [loading, hasMore, page, fetchHighlights]);
 
-  return (
-    <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-background">
-      {/* Ambient Background Effects */}
-      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[50%] bg-emerald-500/10 rounded-full blur-[120px] animate-float pointer-events-none" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[50%] bg-teal-500/10 rounded-full blur-[120px] animate-float animate-delay-500 pointer-events-none" />
+    return (
+        <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-background">
+            {/* Ambient Background Effects */}
+            <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[50%] bg-emerald-500/10 rounded-full blur-[120px] animate-float pointer-events-none" />
+            <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[50%] bg-teal-500/10 rounded-full blur-[120px] animate-float animate-delay-500 pointer-events-none" />
 
-      <div className="flex-1 flex flex-col items-center py-12 px-4 animate-fade-in relative z-10 overflow-y-auto">
-        <div className="w-full max-w-7xl space-y-12 pb-24">
+            <div className="flex-1 flex flex-col items-center pt-24 md:pt-32 py-8 px-6 animate-fade-in relative z-10 overflow-y-auto">
+                <div className="w-full max-w-7xl space-y-12 pb-24">
 
-          {/* Header */}
-          <div className="text-center space-y-6">
-            <Link href="/">
-              <div className="inline-flex items-center justify-center p-1.5 mb-6 glass rounded-full hover:scale-105 transition-transform cursor-pointer">
-                <span className="px-4 py-1.5 text-xs font-semibold text-white uppercase tracking-widest bg-white/10 rounded-full flex items-center gap-2">
-                  <ArrowLeft className="w-3 h-3" /> Back to Home
-                </span>
-              </div>
-            </Link>
-            <h1 className="text-5xl md:text-7xl font-thin tracking-tighter text-white drop-shadow-2xl">
-              Event <br />
-              <span className="font-bold text-transparent bg-clip-text bg-linear-to-r from-emerald-400 via-teal-400 to-cyan-400 animate-shimmer bg-size-[200%_auto]">
-                Highlights
-              </span>
-            </h1>
-            <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
-              A curated collection of the best moments from the event.
-            </p>
-          </div>
-
-          {/* Gallery Grid */}
+                    {/* Header */}
+                    <div className="text-center space-y-6">
+                        <h1 className="text-5xl md:text-7xl font-thin tracking-tighter text-white drop-shadow-2xl">
+                            Event <br />
+                            <span className="font-bold text-transparent bg-clip-text bg-linear-to-r from-emerald-400 via-teal-400 to-cyan-400 animate-shimmer bg-size-[200%_auto]">
+                                Highlights
+                            </span>
+                        </h1>
+                        <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
+                            A curated collection of the best moments from the event.
+                        </p>
+                    </div>          {/* Gallery Grid */}
           {highlights.length > 0 ? (
             <div className="columns-1 md:columns-2 lg:columns-3 gap-8 space-y-8">
               {highlights.map((photo, index) => (

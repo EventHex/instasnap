@@ -7,9 +7,11 @@ import { storage } from '@/lib/storage';
 import { FaceMatch, PhotoPermission } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
 import { Card, CardContent } from '@/components/ui/Card';
+import { AIMatchingLoader } from '@/components/ui/AIMatchingLoader';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
+import { motion } from 'framer-motion';
 import { ArrowLeft, Lock, Sparkles, Camera, Download, Image as ImageIcon, LogOut, RefreshCw, Send, CheckCircle, ArrowRight, Smartphone, KeyRound, ChevronDown } from 'lucide-react';
 
 type Step = 'mobile' | 'otp' | 'selfie' | 'photos';
@@ -51,6 +53,7 @@ export default function RegisteredPage() {
   
   // UI state
   const [loading, setLoading] = useState(false);
+  const [showAILoader, setShowAILoader] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -395,6 +398,7 @@ export default function RegisteredPage() {
       return;
     }
 
+    setShowAILoader(true);
     setLoading(true);
     setError(null);
 
@@ -419,27 +423,10 @@ export default function RegisteredPage() {
     } catch (err: any) {
       setError(err.message || 'Failed to match photos. Please try again.');
     } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle download all
-  const downloadAll = async () => {
-    if (!groupId) return;
-
-    try {
-      const blob = await api.downloadZIP(groupId);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `my-photos-${groupId}.zip`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Failed to download ZIP:', err);
-      setError('Failed to download photos. Please try again.');
+      setTimeout(() => {
+        setShowAILoader(false);
+        setLoading(false);
+      }, 1000); // Keep loader visible for smooth transition
     }
   };
 
@@ -488,54 +475,54 @@ export default function RegisteredPage() {
     );
   }
 
-  // iOS 26 Liquid Glass Styles
-  const iosCardClass = "bg-[#1c1c1e]/70 backdrop-blur-3xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] rounded-[2.5rem] overflow-hidden relative ring-1 ring-white/5 transition-all duration-500";
-  const iosInputClass = "w-full px-6 py-4 bg-[#000000]/20 border border-white/5 rounded-full text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/20 focus:bg-black/40 transition-all text-lg shadow-inner";
-  const iosSelectClass = "px-6 py-4 bg-[#000000]/20 border border-white/5 rounded-full text-white focus:outline-none focus:ring-2 focus:ring-white/20 focus:bg-black/40 backdrop-blur-xl transition-all appearance-none cursor-pointer shadow-inner min-w-[100px]";
+  // Updated Card & Input Styles - Match Home Page Glassmorphism
+  const cardClass = "glass p-8 space-y-6 animate-fade-in hover:scale-[1.01] transition-transform duration-500";
+  const inputClass = "w-full px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-white/20 focus:bg-white/10 transition-all text-base backdrop-blur-xl";
+  const selectClass = "px-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-white focus:outline-none focus:ring-2 focus:ring-white/20 focus:bg-white/10 backdrop-blur-xl transition-all appearance-none cursor-pointer min-w-[100px]";
   
-  // Updated Button Styles - Liquid Gradient
-  const iosButtonPrimaryClass = "w-full py-4 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-full font-bold text-lg hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] active:scale-[0.98] transition-all shadow-[0_10px_30px_rgba(99,102,241,0.3)] border border-white/20 flex items-center justify-center gap-2 relative overflow-hidden after:absolute after:inset-0 after:bg-linear-to-t after:from-black/10 after:to-transparent after:pointer-events-none";
+  // Button Styles - Liquid Gradient Primary
+  const buttonPrimaryClass = "w-full py-4 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl font-bold text-base hover:shadow-[0_0_40px_rgba(99,102,241,0.5)] active:scale-[0.98] transition-all shadow-lg border border-white/20 flex items-center justify-center gap-2 relative overflow-hidden";
   
-  const iosButtonSecondaryClass = "w-full py-4 bg-[#2c2c2e]/80 text-white rounded-full font-semibold text-lg hover:bg-[#3a3a3c] hover:scale-[1.02] active:scale-[0.98] transition-all border border-white/5 flex items-center justify-center gap-2 backdrop-blur-md";
+  const buttonSecondaryClass = "w-full py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-semibold text-base hover:scale-[1.02] active:scale-[0.98] transition-all border border-white/10 flex items-center justify-center gap-2 backdrop-blur-xl";
 
   return (
-    <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-black selection:bg-white/20 font-sans">
-      {/* iOS 18 Style Background - Abstract Blurs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[60%] bg-blue-600/20 rounded-full blur-[150px] animate-pulse-slow pointer-events-none mix-blend-screen" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[80%] h-[60%] bg-purple-600/20 rounded-full blur-[150px] animate-pulse-slow delay-1000 pointer-events-none mix-blend-screen" />
+    <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-background">
+      {/* AI Matching Loader */}
+      <AIMatchingLoader show={showAILoader} />
+      
+      {/* Ambient Background Effects - Match Home Page */}
+      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[50%] bg-indigo-500/10 rounded-full blur-[120px] animate-float pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] animate-float animate-delay-500 pointer-events-none" />
 
-      <div className="flex-1 flex flex-col items-center py-8 px-4 relative z-10 overflow-y-auto">
-        <div className="w-full max-w-md space-y-8 pb-12">
+      <div className="flex-1 flex flex-col items-center pt-24 md:pt-32 py-8 px-6 relative z-10 overflow-y-auto">
+        <div className="w-full max-w-2xl space-y-8 pb-12">
 
         {/* Header */}
-        <div className="text-center space-y-6 animate-fade-in">
-          <Link href="/">
-            <div className="inline-flex items-center justify-center p-1 mb-4 bg-white/5 hover:bg-white/10 backdrop-blur-xl rounded-full border border-white/10 transition-all cursor-pointer group">
-              <span className="px-4 py-1.5 text-xs font-semibold text-white/80 uppercase tracking-widest flex items-center gap-2">
-                <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" /> Back
-              </span>
-            </div>
-          </Link>
-          <h1 className="text-4xl font-medium tracking-tight text-white drop-shadow-2xl">
-            {step === 'photos' ? (userData ? `Welcome back, ${firstName}!` : 'Your Gallery') : 'Member Access'}
-          </h1>
-          <p className="text-lg text-white/50 font-light">
-            {step === 'mobile' && !isRegistering && 'Enter your mobile number to continue.'}
-            {step === 'mobile' && isRegistering && 'Create your account to get started.'}
-            {step === 'otp' && 'Enter the OTP sent to your mobile.'}
-            {step === 'selfie' && (userData ? 'Upload a new selfie to find more photos.' : 'Upload a selfie to find your photos.')}
-            {step === 'photos' && `Found ${results.length} photo${results.length !== 1 ? 's' : ''} with you!`}
-          </p>
+        <div className="text-center space-y-4 md:space-y-6 animate-fade-in">
+          {step !== 'photos' && (
+            <>
+              <h1 className="text-4xl md:text-6xl font-thin tracking-tighter text-white drop-shadow-2xl">
+                Member <br />
+                <span className="font-bold text-transparent bg-clip-text bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400 animate-shimmer bg-size-[200%_auto]">
+                  Access
+                </span>
+              </h1>
+              <p className="text-base md:text-lg text-white/60 max-w-xl mx-auto text-balance font-light leading-relaxed">
+                {step === 'mobile' && !isRegistering && 'Enter your mobile number to access your photos.'}
+                {step === 'mobile' && isRegistering && 'Create your account to get started.'}
+                {step === 'otp' && 'Enter the verification code sent to your mobile.'}
+                {step === 'selfie' && (userData ? 'Upload a new selfie to discover more photos.' : 'Upload a selfie to find your photos instantly.')}
+              </p>
+            </>
+          )}
         </div>
 
         {/* Mobile Number & Registration Form */}
         {step === 'mobile' && (
-          <div className={`${iosCardClass} animate-fade-in`}>
-            <div className="p-8 space-y-8 relative z-10">
-              
+          <div className={cardClass}>
               <div className="space-y-6">
                 <div className="space-y-3">
-                  <label className="text-xs font-bold text-white/40 uppercase tracking-widest ml-4">Mobile Number</label>
+                  <label className="text-sm font-medium text-white/70 tracking-wide">Mobile Number</label>
                   <div className="flex gap-3">
                     <div className="relative">
                       <select
@@ -545,12 +532,12 @@ export default function RegisteredPage() {
                           if (isRegistering) setIsRegistering(false);
                           if (error) setError(null);
                         }}
-                        className={iosSelectClass}
+                        className={selectClass}
                       >
-                        <option value="+91" className="bg-[#1c1c1e]">+91</option>
-                        <option value="+1" className="bg-[#1c1c1e]">+1</option>
-                        <option value="+44" className="bg-[#1c1c1e]">+44</option>
-                        <option value="+971" className="bg-[#1c1c1e]">+971</option>
+                        <option value="+91" className="bg-background">+91</option>
+                        <option value="+1" className="bg-background">+1</option>
+                        <option value="+44" className="bg-background">+44</option>
+                        <option value="+971" className="bg-background">+971</option>
                       </select>
                       <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40 pointer-events-none" />
                     </div>
@@ -563,7 +550,7 @@ export default function RegisteredPage() {
                         if (error) setError(null);
                       }}
                       placeholder="9876543210"
-                      className={iosInputClass}
+                      className={inputClass}
                     />
                   </div>
                 </div>
@@ -572,29 +559,29 @@ export default function RegisteredPage() {
                 {isRegistering && (
                   <div className="space-y-6 animate-slide-down">
                     <div className="space-y-3">
-                      <label className="text-xs font-bold text-white/40 uppercase tracking-widest ml-4">Full Name</label>
+                      <label className="text-sm font-medium text-white/70 tracking-wide">Full Name</label>
                       <input
                         type="text"
                         value={firstName}
                         onChange={(e) => setFirstName(e.target.value)}
                         placeholder="Enter your full name"
-                        className={iosInputClass}
+                        className={inputClass}
                       />
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-xs font-bold text-white/40 uppercase tracking-widest ml-4">Email Address</label>
+                      <label className="text-sm font-medium text-white/70 tracking-wide">Email Address</label>
                       <input
                         type="email"
                         value={emailId}
                         onChange={(e) => setEmailId(e.target.value)}
                         placeholder="your.email@example.com"
-                        className={iosInputClass}
+                        className={inputClass}
                       />
                     </div>
 
                     <div className="space-y-3">
-                      <label className="text-xs font-bold text-white/40 uppercase tracking-widest ml-4">Upload Selfie</label>
+                      <label className="text-sm font-medium text-white/70 tracking-wide">Upload Selfie</label>
                       <div
                         onClick={() => registerSelfieInputRef.current?.click()}
                         className="relative group cursor-pointer w-full aspect-square max-w-[200px] mx-auto rounded-[2rem] flex items-center justify-center transition-all duration-500 hover:scale-105 bg-black/20 border border-white/5 overflow-hidden"
@@ -639,7 +626,7 @@ export default function RegisteredPage() {
                   <button
                     onClick={isRegistering ? handleRegister : handleCheckMobile}
                     disabled={loading || !mobile || (isRegistering && (!firstName || !emailId || !registerSelfie))}
-                    className={iosButtonPrimaryClass}
+                    className={buttonPrimaryClass}
                   >
                     {loading ? (
                       <div className="flex items-center gap-2">
@@ -650,24 +637,23 @@ export default function RegisteredPage() {
                   </button>
                 </div>
               </div>
-            </div>
           </div>
         )}
 
         {/* OTP Entry */}
         {step === 'otp' && (
-          <div className={`${iosCardClass} animate-fade-in`}>
-            <div className="p-8 space-y-8 relative z-10">
+          <div className={cardClass}>
+            <div className="space-y-6">
               
-              <div className="text-center space-y-2">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
-                    <Smartphone className="w-8 h-8 text-white" />
+              <div className="text-center space-y-3">
+                <div className="flex justify-center mb-2">
+                  <div className="w-14 h-14 rounded-full bg-linear-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-white/10">
+                    <Smartphone className="w-7 h-7 text-white" />
                   </div>
                 </div>
-                <p className="text-white/60 font-light">
-                  Enter the code sent to <br />
-                  <span className="text-white font-semibold">{countryCode} {userMobile}</span>
+                <h3 className="text-xl font-bold text-white">Enter Verification Code</h3>
+                <p className="text-white/60 text-sm">
+                  Sent to <span className="text-white font-semibold">{countryCode} {userMobile}</span>
                 </p>
               </div>
 
@@ -682,7 +668,7 @@ export default function RegisteredPage() {
                     value={digit}
                     onChange={(e) => handleOtpChange(index, e.target.value)}
                     onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                    className="w-14 h-16 bg-black/20 border border-white/5 rounded-2xl text-white text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-white/20 focus:bg-black/40 transition-all"
+                    className="w-14 h-14 md:w-16 md:h-16 bg-white/5 border border-white/10 rounded-2xl text-white text-center text-2xl font-bold focus:outline-none focus:ring-2 focus:ring-white/30 focus:bg-white/10 transition-all backdrop-blur-xl"
                   />
                 ))}
               </div>
@@ -709,14 +695,14 @@ export default function RegisteredPage() {
                     setOtp(['', '', '', '']);
                     setError(null);
                   }}
-                  className={iosButtonSecondaryClass}
+                  className={buttonSecondaryClass}
                 >
                   Back
                 </button>
                 <button
                   onClick={handleVerifyOTP}
                   disabled={loading || otp.join('').length !== 4}
-                  className={iosButtonPrimaryClass}
+                  className={buttonPrimaryClass}
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
@@ -732,12 +718,12 @@ export default function RegisteredPage() {
 
         {/* Selfie Upload */}
         {step === 'selfie' && (
-          <div className={`${iosCardClass} animate-fade-in`}>
-            <div className="p-8 flex flex-col items-center space-y-8 relative z-10">
+          <div className={cardClass}>
+            <div className="flex flex-col items-center space-y-6">
               
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="relative group cursor-pointer w-64 h-64 rounded-[2.5rem] flex items-center justify-center transition-all duration-500 hover:scale-105 bg-black/20 border border-white/5 overflow-hidden"
+                className="relative group cursor-pointer w-full max-w-xs aspect-square rounded-3xl flex items-center justify-center transition-all duration-500 hover:scale-105 glass overflow-hidden"
               >
                 {selectedImage ? (
                   <div className="relative w-full h-full">
@@ -747,16 +733,19 @@ export default function RegisteredPage() {
                       fill
                       className="object-cover"
                     />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-                      <span className="text-white font-medium tracking-wide">Change</span>
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                      <span className="px-6 py-3 bg-white/90 text-black font-bold rounded-xl">Change Photo</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center space-y-4 text-white/40 group-hover:text-white transition-colors">
-                    <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-4xl shadow-inner ring-1 ring-white/5 group-hover:bg-white/10 transition-colors">
-                      <Camera className="w-8 h-8" />
+                  <div className="flex flex-col items-center space-y-4 text-white/50 group-hover:text-white transition-colors p-8">
+                    <div className="w-20 h-20 rounded-full bg-linear-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-white/10 group-hover:scale-110 transition-transform">
+                      <Camera className="w-9 h-9" />
                     </div>
-                    <span className="text-sm font-bold tracking-widest uppercase">Tap to Upload</span>
+                    <div className="text-center">
+                      <p className="text-base font-bold tracking-wide">Tap to Upload</p>
+                      <p className="text-sm text-white/40 mt-1">Your selfie photo</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -779,7 +768,7 @@ export default function RegisteredPage() {
                 <button
                   onClick={handleMatch}
                   disabled={!file || loading}
-                  className={iosButtonPrimaryClass}
+                  className={buttonPrimaryClass}
                 >
                   {loading ? (
                     <div className="flex items-center gap-2">
@@ -791,7 +780,7 @@ export default function RegisteredPage() {
                 
                 <button
                   onClick={handleLogout}
-                  className={iosButtonSecondaryClass}
+                  className={buttonSecondaryClass}
                 >
                   Logout
                 </button>
@@ -802,65 +791,51 @@ export default function RegisteredPage() {
 
         {/* Photos Grid */}
         {step === 'photos' && (
-          <div className="space-y-8 animate-fade-in w-full">
-            <div className={iosCardClass}>
-              <div className="p-8 relative z-10">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-3xl shadow-inner ring-1 ring-white/5">
-                      <Sparkles className="w-8 h-8 text-white" />
-                    </div>
-                    <div>
-                      <h2 className="text-2xl font-bold text-white tracking-tight">
-                        {results.length} Photo{results.length !== 1 ? 's' : ''}
-                      </h2>
-                      <p className="text-white/60 font-light">Found in gallery</p>
-                    </div>
+          <div className="space-y-6 animate-fade-in w-full">
+            {/* Welcome Section - Mobile only */}
+            <div className="md:hidden text-center mb-4">
+              <h1 className="text-3xl font-bold text-white mb-2">
+                Welcome back, <span className="text-transparent bg-clip-text bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400">{firstName}!</span>
+              </h1>
+              <p className="text-white/60 text-sm">Found {results.length} photo{results.length !== 1 ? 's' : ''} with you</p>
+            </div>
+
+            {/* Stats Card */}
+            <div className="glass p-6 md:p-8">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-linear-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-white/10">
+                    <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-white" />
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                    {groupId && (
-                      <button
-                        onClick={downloadAll}
-                        className={`${iosButtonPrimaryClass} w-auto! px-8`}
-                      >
-                        <Download className="w-4 h-4" />
-                        Download All
-                      </button>
-                    )}
-                    <button
-                      onClick={handleRefreshPhotos}
-                      disabled={loading}
-                      className={`${iosButtonPrimaryClass} w-auto! px-8 bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/30`}
-                    >
-                      <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                      {loading ? 'Checking...' : 'Check New Photos'}
-                    </button>
-                    <button
-                      onClick={handleSmartMatchAgain}
-                      disabled={loading}
-                      className={`${iosButtonPrimaryClass} w-auto! px-8 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border-purple-500/30`}
-                    >
-                      <Sparkles className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                      {loading ? 'Matching...' : 'Find More Photos'}
-                    </button>
-                    <button
-                      onClick={handleLogout}
-                      className={`${iosButtonSecondaryClass} w-auto! px-8`}
-                    >
-                      <LogOut className="w-4 h-4" />
-                      Logout
-                    </button>
+                  <div>
+                    <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                      Hey {firstName}! 👋
+                    </h2>
+                    <p className="text-white/60 font-light text-sm md:text-base">{results.length} photo{results.length !== 1 ? 's' : ''} found in your collection</p>
                   </div>
+                </div>
+                <div className="flex flex-wrap justify-center gap-3 w-full md:w-auto">
+                  <button
+                    onClick={handleSmartMatchAgain}
+                    disabled={loading}
+                    className="px-6 py-3 bg-linear-to-br from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-white rounded-2xl font-semibold text-sm border border-purple-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 backdrop-blur-xl"
+                  >
+                    <Sparkles className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                    Find More
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {/* Photos Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
               {results.map((photo, index) => (
-                <div
+                <motion.div
                   key={photo._id}
-                  className="group relative aspect-square rounded-[2rem] overflow-hidden bg-[#1c1c1e]/50 backdrop-blur-md border border-white/5 hover:scale-105 transition-all duration-500 animate-fade-in cursor-pointer shadow-lg"
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05, duration: 0.3 }}
+                  className="group relative aspect-square rounded-2xl md:rounded-3xl overflow-hidden glass hover:scale-[1.03] transition-all duration-500 cursor-pointer"
                 >
                   <Image
                     src={photo.thumbnail}
@@ -868,22 +843,23 @@ export default function RegisteredPage() {
                     fill
                     className="object-cover group-hover:scale-110 transition-transform duration-500"
                   />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
                     <a
                       href={photo.image}
                       download
-                      className="px-6 py-3 bg-white/20 backdrop-blur-xl text-white text-sm font-bold rounded-full hover:bg-white/30 transition-colors border border-white/20"
+                      className="px-5 py-2.5 bg-white/90 backdrop-blur-xl text-black text-sm font-bold rounded-xl hover:bg-white transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      <Download className="w-4 h-4" />
                       Download
                     </a>
                   </div>
-                </div>
+                </motion.div>
               ))}
             </div>
 
             {results.length === 0 && (
-              <div className={iosCardClass}>
+              <div className={cardClass}>
                 <div className="p-12 text-center space-y-4 relative z-10">
                   <div className="flex justify-center mb-4">
                     <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center">
@@ -902,7 +878,7 @@ export default function RegisteredPage() {
                         setSelectedImage(null);
                         setError(null);
                       }}
-                      className={iosButtonPrimaryClass}
+                      className={buttonPrimaryClass}
                     >
                       <RefreshCw className="w-4 h-4" />
                       Try Another Selfie

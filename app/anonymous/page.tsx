@@ -5,11 +5,12 @@ import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { storage } from '@/lib/storage';
 import { AnonymousPhoto, PhotoPermission } from '@/lib/types';
-import { Button } from '@/components/ui/Button';
+import { AIMatchingLoader } from '@/components/ui/AIMatchingLoader';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
-import { ArrowLeft, Camera, Download, ExternalLink, Sparkles, Search, UserPlus, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Camera, ExternalLink, Sparkles, Search, UserPlus } from 'lucide-react';
 
 export default function AnonymousMatchPage() {
   const router = useRouter();
@@ -18,16 +19,17 @@ export default function AnonymousMatchPage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showAILoader, setShowAILoader] = useState(false);
   const [results, setResults] = useState<AnonymousPhoto[]>([]);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const eventId = process.env.NEXT_PUBLIC_EVENT_ID || '';
 
-  // iOS 26 Liquid Glass Styles (Consistent with Registered Page)
-  const iosCardClass = "bg-[#1c1c1e]/70 backdrop-blur-3xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)] rounded-[2.5rem] overflow-hidden relative ring-1 ring-white/5 transition-all duration-500";
-  const iosButtonPrimaryClass = "w-full py-4 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-full font-bold text-lg hover:shadow-[0_0_40px_rgba(99,102,241,0.6)] active:scale-[0.98] transition-all shadow-[0_10px_30px_rgba(99,102,241,0.3)] border border-white/20 flex items-center justify-center gap-2 relative overflow-hidden after:absolute after:inset-0 after:bg-linear-to-t after:from-black/10 after:to-transparent after:pointer-events-none";
-  const iosButtonSecondaryClass = "w-full py-4 bg-[#2c2c2e]/80 text-white rounded-full font-semibold text-lg hover:bg-[#3a3a3c] hover:scale-[1.02] active:scale-[0.98] transition-all border border-white/5 flex items-center justify-center gap-2 backdrop-blur-md";
+  // Glassmorphism Styles - Match Home Page
+  const cardClass = "glass p-8 space-y-6 animate-fade-in hover:scale-[1.01] transition-transform duration-500";
+  const buttonPrimaryClass = "w-full py-4 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 text-white rounded-2xl font-bold text-base hover:shadow-[0_0_40px_rgba(99,102,241,0.5)] active:scale-[0.98] transition-all shadow-lg border border-white/20 flex items-center justify-center gap-2 relative overflow-hidden";
+  const buttonSecondaryClass = "w-full py-4 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-semibold text-base hover:scale-[1.02] active:scale-[0.98] transition-all border border-white/10 flex items-center justify-center gap-2 backdrop-blur-xl";
 
   useEffect(() => {
     const fetchPhotoPermission = async () => {
@@ -80,6 +82,7 @@ export default function AnonymousMatchPage() {
   const handleSearch = async () => {
     if (!file || !eventId) return;
 
+    setShowAILoader(true);
     setLoading(true);
     setError(null);
     try {
@@ -96,8 +99,11 @@ export default function AnonymousMatchPage() {
       setError('Failed to search for photos. Please try again.');
       console.error(err);
     } finally {
-      setLoading(false);
-      setSearched(true);
+      setTimeout(() => {
+        setShowAILoader(false);
+        setLoading(false);
+        setSearched(true);
+      }, 1000);
     }
   };
 
@@ -109,6 +115,7 @@ export default function AnonymousMatchPage() {
       return;
     }
 
+    setShowAILoader(true);
     setLoading(true);
     setError(null);
     try {
@@ -124,60 +131,53 @@ export default function AnonymousMatchPage() {
       setError('Failed to search for photos. Please try again.');
       console.error(err);
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const downloadAll = async () => {
-    for (const photo of results) {
-      try {
-        const link = document.createElement('a');
-        link.href = photo.originalUrl;
-        link.download = `photo-${photo.imageId}.jpg`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        await new Promise(resolve => setTimeout(resolve, 500));
-      } catch (err) {
-        console.error('Failed to download photo:', err);
-      }
+      setTimeout(() => {
+        setShowAILoader(false);
+        setLoading(false);
+      }, 1000);
     }
   };
 
   return (
-    <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-black selection:bg-white/20 font-sans">
-      {/* iOS 18 Style Background - Abstract Blurs */}
-      <div className="absolute top-[-20%] left-[-10%] w-[80%] h-[60%] bg-blue-600/20 rounded-full blur-[150px] animate-pulse-slow pointer-events-none mix-blend-screen" />
-      <div className="absolute bottom-[-20%] right-[-10%] w-[80%] h-[60%] bg-purple-600/20 rounded-full blur-[150px] animate-pulse-slow delay-1000 pointer-events-none mix-blend-screen" />
+    <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-background">
+      {/* AI Matching Loader */}
+      <AIMatchingLoader show={showAILoader} />
+      
+      {/* Ambient Background Effects - Match Home Page */}
+      <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[50%] bg-indigo-500/10 rounded-full blur-[120px] animate-float pointer-events-none" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[50%] bg-purple-500/10 rounded-full blur-[120px] animate-float animate-delay-500 pointer-events-none" />
 
-      <div className="flex-1 flex flex-col items-center py-8 px-4 relative z-10 overflow-y-auto">
-        <div className="w-full max-w-4xl space-y-8 pb-24">
+      <div className="flex-1 flex flex-col items-center py-8 px-6 relative z-10 overflow-y-auto">
+        <div className="w-full max-w-2xl space-y-8 pb-24">
 
           {/* Header */}
-          <div className="text-center space-y-6 animate-fade-in">
+          <div className="text-center space-y-4 md:space-y-6 animate-fade-in">
             <Link href="/">
-              <div className="inline-flex items-center justify-center p-1 mb-4 bg-white/5 hover:bg-white/10 backdrop-blur-xl rounded-full border border-white/10 transition-all cursor-pointer group">
-                <span className="px-4 py-1.5 text-xs font-semibold text-white/80 uppercase tracking-widest flex items-center gap-2">
-                  <ArrowLeft className="w-3 h-3 group-hover:-translate-x-1 transition-transform" /> Back
+              <div className="inline-flex items-center justify-center p-1.5 glass rounded-full animate-float hover:scale-105 transition-transform cursor-pointer">
+                <span className="px-4 py-1.5 text-[10px] md:text-xs font-semibold text-white uppercase tracking-widest bg-white/5 rounded-full flex items-center gap-2">
+                  <ArrowLeft className="w-3 h-3" /> Back to Home
                 </span>
               </div>
             </Link>
-            <h1 className="text-4xl font-medium tracking-tight text-white drop-shadow-2xl">
-              Find Your Moments
+            <h1 className="text-4xl md:text-6xl font-thin tracking-tighter text-white drop-shadow-2xl">
+              Find Your <br />
+              <span className="font-bold text-transparent bg-clip-text bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400 animate-shimmer bg-size-[200%_auto]">
+                Moments
+              </span>
             </h1>
-            <p className="text-lg text-white/50 font-light max-w-lg mx-auto">
-              Upload a selfie to instantly discover photos you're in.
+            <p className="text-base md:text-lg text-white/60 max-w-xl mx-auto text-balance font-light leading-relaxed">
+              Upload a selfie and let our AI find every photo you&apos;re in.
             </p>
           </div>
 
           {/* Upload Section */}
           {!searched && (
-            <div className={`${iosCardClass} max-w-md mx-auto animate-fade-in`}>
-              <div className="p-8 flex flex-col items-center space-y-8 relative z-10">
+            <div className={cardClass}>
+              <div className="flex flex-col items-center space-y-6">
                 
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="relative group cursor-pointer w-64 h-64 rounded-[2.5rem] flex items-center justify-center transition-all duration-500 hover:scale-105 bg-black/20 border border-white/5 overflow-hidden"
+                  className="relative group cursor-pointer w-full max-w-xs aspect-square rounded-3xl flex items-center justify-center transition-all duration-500 hover:scale-105 glass overflow-hidden"
                 >
                   {selectedImage ? (
                     <div className="relative w-full h-full">
@@ -187,16 +187,19 @@ export default function AnonymousMatchPage() {
                         fill
                         className="object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
-                        <span className="text-white font-medium tracking-wide">Change</span>
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-sm">
+                        <span className="px-6 py-3 bg-white/90 text-black font-bold rounded-xl">Change Photo</span>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col items-center space-y-4 text-white/40 group-hover:text-white transition-colors">
-                      <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center text-4xl shadow-inner ring-1 ring-white/5 group-hover:bg-white/10 transition-colors">
-                        <Camera className="w-8 h-8" />
+                    <div className="flex flex-col items-center space-y-4 text-white/50 group-hover:text-white transition-colors p-8">
+                      <div className="w-20 h-20 rounded-full bg-linear-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-white/10 group-hover:scale-110 transition-transform">
+                        <Camera className="w-9 h-9" />
                       </div>
-                      <span className="text-sm font-bold tracking-widest uppercase">Tap to Upload</span>
+                      <div className="text-center">
+                        <p className="text-base font-bold tracking-wide">Tap to Upload</p>
+                        <p className="text-sm text-white/40 mt-1">Your selfie photo</p>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -219,7 +222,7 @@ export default function AnonymousMatchPage() {
                   <button
                     onClick={handleSearch}
                     disabled={!file || loading}
-                    className={iosButtonPrimaryClass}
+                    className={buttonPrimaryClass}
                   >
                     {loading ? (
                       <div className="flex items-center gap-2">
@@ -240,65 +243,57 @@ export default function AnonymousMatchPage() {
 
           {/* Results Section */}
           {searched && (
-            <div className="space-y-8 animate-fade-in w-full">
-              <div className={iosCardClass}>
-                <div className="p-8 relative z-10">
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-3xl shadow-inner ring-1 ring-white/5">
-                        <Sparkles className="w-8 h-8 text-white" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-bold text-white tracking-tight">
-                          {results.length} Photo{results.length !== 1 ? 's' : ''}
-                        </h2>
-                        <p className="text-white/60 font-light">Found matching your selfie</p>
-                      </div>
+            <div className="space-y-6 animate-fade-in w-full">
+              {/* Stats Card */}
+              <div className="glass p-6 md:p-8">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 md:w-16 md:h-16 rounded-full bg-linear-to-tr from-indigo-500/20 to-purple-500/20 flex items-center justify-center ring-1 ring-white/10">
+                      <Sparkles className="w-7 h-7 md:w-8 md:h-8 text-white" />
                     </div>
-                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                      {results.length > 0 && (
-                        <button
-                          onClick={downloadAll}
-                          className={`${iosButtonPrimaryClass} w-auto! px-8`}
-                        >
-                          <Download className="w-4 h-4" />
-                          Download All
-                        </button>
-                      )}
-                      {storage.hasAnonymousSelfie() && (
-                        <button
-                          onClick={handleFindMore}
-                          disabled={loading}
-                          className={`${iosButtonPrimaryClass} w-auto! px-8 bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border-purple-500/30`}
-                        >
-                          <Sparkles className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-                          {loading ? 'Finding...' : 'Find More Photos'}
-                        </button>
-                      )}
+                    <div>
+                      <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+                        {results.length} Photo{results.length !== 1 ? 's' : ''}
+                      </h2>
+                      <p className="text-white/60 font-light text-sm md:text-base">Found matching your selfie</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap justify-center gap-3 w-full md:w-auto">
+                    {storage.hasAnonymousSelfie() && (
                       <button
-                        onClick={() => {
-                          setSearched(false);
-                          setFile(null);
-                          setSelectedImage(null);
-                          setResults([]);
-                        }}
-                        className={`${iosButtonSecondaryClass} w-auto! px-8`}
+                        onClick={handleFindMore}
+                        disabled={loading}
+                        className="px-6 py-3 bg-linear-to-br from-purple-500/20 to-pink-500/20 hover:from-purple-500/30 hover:to-pink-500/30 text-white rounded-2xl font-semibold text-sm border border-purple-500/20 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 backdrop-blur-xl"
                       >
-                        <Search className="w-4 h-4" />
-                        New Search
+                        <Sparkles className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                        Find More
                       </button>
-                    </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSearched(false);
+                        setFile(null);
+                        setSelectedImage(null);
+                        setResults([]);
+                      }}
+                      className="px-6 py-3 bg-white/5 hover:bg-white/10 text-white rounded-2xl font-semibold text-sm border border-white/10 flex items-center gap-2 transition-all hover:scale-105 active:scale-95 backdrop-blur-xl"
+                    >
+                      <Search className="w-4 h-4" />
+                      New Search
+                    </button>
                   </div>
                 </div>
               </div>
 
               {results.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
                   {results.map((photo, index) => (
-                    <div
+                    <motion.div
                       key={index}
-                      className="group relative aspect-square rounded-[2rem] overflow-hidden bg-[#1c1c1e]/50 backdrop-blur-md border border-white/5 hover:scale-105 transition-all duration-500 animate-fade-in cursor-pointer shadow-lg"
-                      style={{ animationDelay: `${index * 50}ms` }}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.05, duration: 0.3 }}
+                      className="group relative aspect-square rounded-2xl md:rounded-3xl overflow-hidden glass hover:scale-[1.03] transition-all duration-500 cursor-pointer"
                     >
                       <Image
                         src={photo.thumbnailUrl || photo.compressedUrl}
@@ -306,23 +301,23 @@ export default function AnonymousMatchPage() {
                         fill
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
                         <a
                           href={photo.originalUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="px-6 py-3 bg-white/20 backdrop-blur-xl text-white text-sm font-bold rounded-full hover:bg-white/30 transition-colors border border-white/20 flex items-center gap-2"
+                          className="px-5 py-2.5 bg-white/90 backdrop-blur-xl text-black text-sm font-bold rounded-xl hover:bg-white transition-all flex items-center gap-2 hover:scale-105 active:scale-95"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <ExternalLink className="w-4 h-4" />
                           View
                         </a>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               ) : (
-                <div className={iosCardClass}>
+                <div className={cardClass}>
                   <div className="p-12 text-center space-y-4 relative z-10">
                     <div className="flex justify-center mb-4">
                       <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center">
@@ -341,7 +336,7 @@ export default function AnonymousMatchPage() {
                           setSelectedImage(null);
                           setResults([]);
                         }}
-                        className={iosButtonPrimaryClass}
+                        className={buttonPrimaryClass}
                       >
                         Try Another Selfie
                       </button>
@@ -352,7 +347,7 @@ export default function AnonymousMatchPage() {
 
               {/* Registration Prompt */}
               {results.length > 0 && (
-                <div className={`${iosCardClass} mt-8`}>
+                <div className={`${cardClass} mt-8`}>
                   <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
                     <div className="text-center md:text-left space-y-2">
                       <h3 className="text-xl font-bold text-white">Save Your Collection</h3>
@@ -361,7 +356,7 @@ export default function AnonymousMatchPage() {
                       </p>
                     </div>
                     <Link href="/registered" className="w-full md:w-auto">
-                      <button className={`${iosButtonSecondaryClass} w-full md:w-auto px-8 bg-white/10 hover:bg-white/20`}>
+                      <button className={`${buttonSecondaryClass} w-full md:w-auto px-8 bg-white/10 hover:bg-white/20`}>
                         <UserPlus className="w-4 h-4" />
                         Create Account
                       </button>
