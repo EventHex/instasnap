@@ -86,66 +86,49 @@ export default function PeoplePage() {
             </div>
           )}
 
-          {/* People Grid - Masonry Layout */}
+          {/* People Grid - Circle Layout */}
           {!loading && people.length > 0 && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-3 md:gap-4 space-y-3 md:space-y-4 mt-8"
+              className="grid grid-cols-4 md:grid-cols-8 gap-3 md:gap-4 mt-8"
             >
               {people.map((person, index) => {
-                // Varying heights for masonry effect
-                const heights = ['h-64', 'h-72', 'h-80', 'h-56', 'h-68', 'h-60'];
-                const height = heights[index % heights.length];
-                
                 return (
                   <motion.div
                     key={person.groupId}
                     initial={{ opacity: 0, scale: 0.8 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: Math.min(index * 0.02, 0.4), duration: 0.4 }}
-                    className="break-inside-avoid mb-3 md:mb-4"
                   >
                     <Link href={`/people/${person.groupId}`}>
-                      <div className={`group relative ${height} rounded-2xl md:rounded-3xl overflow-hidden cursor-pointer`}>
-                        {/* Image Container */}
-                        <div className="absolute inset-0 bg-white/5 backdrop-blur-sm">
-                          <Image
-                            src={person.representativeFace}
-                            alt={`Person ${index + 1}`}
-                            fill
-                            className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
-                            onError={(e) => {
-                              const target = e.target as HTMLImageElement;
-                              target.style.display = 'none';
-                              const parent = target.parentElement;
-                              if (parent) {
-                                parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-linear-to-br from-violet-500/20 to-fuchsia-500/20"><span class="text-white/40 text-4xl">?</span></div>`;
-                              }
-                            }}
-                          />
-                        </div>
-                        
-                        {/* Gradient Overlay - Always Visible */}
-                        <div className="absolute inset-0 bg-linear-to-t from-black/70 via-transparent to-transparent" />
-                        
-                        {/* Photo Count Badge */}
-                        <div className="absolute bottom-0 left-0 right-0 p-4">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-white/10 backdrop-blur-xl rounded-full border border-white/20">
-                              <ImageIcon className="w-3.5 h-3.5 text-white" />
-                              <span className="text-sm font-semibold text-white">
-                                {person.matchCount}
-                              </span>
-                            </div>
-                            <div className="opacity-0 group-hover:opacity-100 transition-all duration-300 px-3 py-1.5 bg-violet-500/20 backdrop-blur-xl rounded-full border border-violet-400/30">
-                              <span className="text-xs font-medium text-white">View Photos</span>
-                            </div>
+                      <div className="group relative cursor-pointer">
+                        <div className="aspect-square rounded-full overflow-hidden relative ring-1 ring-white/10 group-hover:ring-violet-400/50 transition-all duration-300">
+                          {/* Image Container */}
+                          <div className="absolute inset-0 bg-white/5 backdrop-blur-sm">
+                            <Image
+                              src={person.representativeFace}
+                              alt={`Person ${index + 1}`}
+                              fill
+                              className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-linear-to-br from-violet-500/20 to-fuchsia-500/20"><span class="text-white/40 text-4xl">?</span></div>`;
+                                }
+                              }}
+                            />
                           </div>
                         </div>
-
-                        {/* Hover Ring */}
-                        <div className="absolute inset-0 rounded-2xl md:rounded-3xl ring-1 ring-white/10 group-hover:ring-violet-400/50 transition-all duration-300" />
+                        
+                        {/* Count Badge */}
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 md:w-8 md:h-8 bg-violet-500 rounded-full flex items-center justify-center border-2 border-black shadow-lg z-10">
+                          <span className="text-[10px] md:text-xs font-bold text-white">
+                            {person.matchCount}
+                          </span>
+                        </div>
                       </div>
                     </Link>
                   </motion.div>
