@@ -11,8 +11,8 @@ import { AIMatchingLoader } from '@/components/ui/AIMatchingLoader';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Lock, Sparkles, Camera, Download, Image as ImageIcon, LogOut, RefreshCw, Send, CheckCircle, ArrowRight, Smartphone, KeyRound, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, Lock, Sparkles, Camera, Download, Image as ImageIcon, LogOut, RefreshCw, Send, CheckCircle, ArrowRight, Smartphone, KeyRound, ChevronDown, X, ExternalLink, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 
 type Step = 'mobile' | 'otp' | 'selfie' | 'photos';
 
@@ -55,6 +55,9 @@ export default function RegisteredPage() {
   const [loading, setLoading] = useState(false);
   const [showAILoader, setShowAILoader] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<FaceMatch | null>(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const registerSelfieInputRef = useRef<HTMLInputElement>(null);
@@ -467,6 +470,48 @@ export default function RegisteredPage() {
     }
   };
 
+  // Navigation functions
+  const handlePrevPhoto = useCallback(() => {
+    setSelectedPhotoIndex((prev) => {
+      const newIndex = prev > 0 ? prev - 1 : results.length - 1;
+      setSelectedPhoto(results[newIndex]);
+      return newIndex;
+    });
+  }, [results]);
+
+  const handleNextPhoto = useCallback(() => {
+    setSelectedPhotoIndex((prev) => {
+      const newIndex = prev < results.length - 1 ? prev + 1 : 0;
+      setSelectedPhoto(results[newIndex]);
+      return newIndex;
+    });
+  }, [results]);
+
+  // Slideshow effect
+  useEffect(() => {
+    if (isPlaying && selectedPhoto) {
+      const interval = setInterval(() => {
+        handleNextPhoto();
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isPlaying, selectedPhoto, handleNextPhoto]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!selectedPhoto) return;
+      if (e.key === 'ArrowLeft') handlePrevPhoto();
+      if (e.key === 'ArrowRight') handleNextPhoto();
+      if (e.key === 'Escape') {
+        setSelectedPhoto(null);
+        setIsPlaying(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [selectedPhoto, handlePrevPhoto, handleNextPhoto]);
+
   if (isLoadingPermissions) {
     return (
       <div className="h-dvh flex items-center justify-center bg-black">
@@ -856,6 +901,11 @@ export default function RegisteredPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.05, duration: 0.3 }}
                   className="group relative aspect-square rounded-2xl md:rounded-3xl overflow-hidden glass hover:scale-[1.03] transition-all duration-500 cursor-pointer"
+                  onClick={() => {
+                    setSelectedPhoto(photo);
+                    setSelectedPhotoIndex(index);
+                    setIsPlaying(false);
+                  }}
                 >
                   <Image
                     src={photo.thumbnail}
@@ -912,6 +962,122 @@ export default function RegisteredPage() {
       </div>
       
       </div>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {selectedPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl"
+            onClick={() => {
+              setSelectedPhoto(null);
+              setIsPlaying(false);
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setSelectedPhoto(null);
+                setIsPlaying(false);
+              }}
+              className="absolute top-6 right-6 w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-transform z-20"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Previous Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrevPhoto();
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-all z-20 hover:bg-white/20"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Next Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNextPhoto();
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-all z-20 hover:bg-white/20"
+            >
+              <ChevronRight className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Photo Counter and Play Button */}
+            <div className="absolute top-6 left-6 flex items-center gap-3 z-20">
+              {/* Play/Pause Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsPlaying(!isPlaying);
+                }}
+                className="w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-transform hover:bg-white/20"
+              >
+                {isPlaying ? (
+                  <Pause className="w-5 h-5 text-white" />
+                ) : (
+                  <Play className="w-5 h-5 text-white ml-0.5" />
+                )}
+              </button>
+
+              {/* Photo Counter */}
+              <div className="px-4 py-2.5 glass rounded-full backdrop-blur-xl">
+                <span className="text-sm font-semibold text-white">
+                  {selectedPhotoIndex + 1} / {results.length}
+                </span>
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-6xl w-full max-h-[90vh] rounded-3xl overflow-hidden glass"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative w-full h-[80vh]">
+                <Image
+                  src={selectedPhoto.image}
+                  alt="Full size"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              
+              <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-6">
+                <div className="flex gap-3 justify-center">
+                  <a
+                    href={selectedPhoto.image}
+                    download
+                    className="px-6 py-3 bg-white/90 hover:bg-white text-black rounded-2xl font-semibold text-sm flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </a>
+                  <a
+                    href={selectedPhoto.image}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-semibold text-sm flex items-center gap-2 transition-all hover:scale-105 active:scale-95 backdrop-blur-xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Footer />
     </div>
   );
