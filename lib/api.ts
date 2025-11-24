@@ -120,6 +120,7 @@ class InstaSnapAPI {
     if (!response.ok || data.success === false) {
       const errorMessage = data.error || data.message || 'OTP verification failed';
       return {
+        success: false,
         message: errorMessage,
         verified: false,
         error: errorMessage

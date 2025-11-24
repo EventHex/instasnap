@@ -150,6 +150,15 @@ export const storage = {
     return !!this.getAuthToken() && !!this.getUserData();
   },
 
+  clearAuth(): void {
+    if (typeof window === 'undefined') return;
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+    localStorage.removeItem(STORAGE_KEYS.MATCHED_PHOTOS);
+    this.clearUserSession();
+  },
+
   // Anonymous selfie storage (for "Find More Photos" feature)
   getAnonymousSelfie(): File | null {
     if (typeof window === 'undefined') return null;
