@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
-import { EventHighlight } from '@/lib/types';
+import { EventHighlight, Person } from '@/lib/types';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
 import { Download, ExternalLink, X } from 'lucide-react';
@@ -10,6 +10,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PhotosPage() {
   const [photos, setPhotos] = useState<EventHighlight[]>([]);
+  const [allPhotos, setAllPhotos] = useState<EventHighlight[]>([]);
+  const [people, setPeople] = useState<Person[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -21,7 +24,7 @@ export default function PhotosPage() {
     try {
       const response = await api.getAllEventPhotos(eventId, pageNum, 30);
       if (response.success) {
-        setPhotos(prev => pageNum === 1 ? response.response : [...prev, ...response.response]);
+        setAllPhotos(prev => pageNum === 1 ? response.response : [...prev, ...response.response]);
         setHasMore(response.response.length === 30);
       }
     } catch (error) {
@@ -31,11 +34,38 @@ export default function PhotosPage() {
     }
   }, [eventId]);
 
+  const fetchPeople = useCallback(async () => {
+    try {
+      const response = await api.getPeople(eventId);
+      if (response.success) {
+        setPeople(response.people);
+      }
+    } catch (error) {
+      console.error('Failed to fetch people:', error);
+    }
+  }, [eventId]);
+
   useEffect(() => {
     if (eventId) {
+      fetchPeople();
       fetchPhotos(1);
     }
-  }, [eventId, fetchPhotos]);
+  }, [eventId, fetchPeople, fetchPhotos]);
+
+  // Filter photos when person is selected/deselected
+  useEffect(() => {
+    if (selectedPerson) {
+      const person = people.find(p => p.groupId === selectedPerson);
+      if (person) {
+        const filtered = allPhotos.filter(photo => 
+          person.eventImages.includes(photo._id)
+        );
+        setPhotos(filtered);
+      }
+    } else {
+      setPhotos(allPhotos);
+    }
+  }, [selectedPerson, people, allPhotos]);
 
   const lastElementRef = useCallback((node: HTMLDivElement) => {
     if (loading) return;
@@ -73,9 +103,78 @@ export default function PhotosPage() {
               </span>
             </h1>
             <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
-              Browse all photos from the event in our complete collection.
+              {selectedPerson 
+                ? `Showing photos of ${people.find(p => p.groupId === selectedPerson)?.matchCount || 0} moments`
+                : 'Browse all photos from the event in our complete collection.'}
             </p>
           </div>
+
+          {/* People Filter Row */}
+          {people.length > 0 && (
+            <div className="w-full overflow-x-auto pb-4 -mx-6 px-6">
+              <div className="flex gap-4 min-w-max">
+                {/* All Photos Button */}
+                <motion.button
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  onClick={() => setSelectedPerson(null)}
+                  className={`shrink-0 group relative transition-all duration-300 ${
+                    !selectedPerson ? 'scale-110' : 'scale-100 hover:scale-105'
+                  }`}
+                >
+                  <div className={`w-20 h-20 rounded-full glass border-2 transition-all duration-300 flex items-center justify-center ${
+                    !selectedPerson 
+                      ? 'border-violet-400 shadow-lg shadow-violet-500/50' 
+                      : 'border-white/20 hover:border-white/40'
+                  }`}>
+                    <span className="text-2xl">📷</span>
+                  </div>
+                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                    <span className="text-xs text-white/60 font-medium">All Photos</span>
+                  </div>
+                </motion.button>
+
+                {/* People Faces */}
+                {people.slice(0, 20).map((person, index) => (
+                  <motion.button
+                    key={person.groupId}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.03 }}
+                    onClick={() => setSelectedPerson(person.groupId === selectedPerson ? null : person.groupId)}
+                    className={`shrink-0 group relative transition-all duration-300 ${
+                      selectedPerson === person.groupId ? 'scale-110' : 'scale-100 hover:scale-105'
+                    }`}
+                  >
+                    <div className={`w-20 h-20 rounded-full overflow-hidden glass border-2 transition-all duration-300 ${
+                      selectedPerson === person.groupId 
+                        ? 'border-violet-400 shadow-lg shadow-violet-500/50' 
+                        : 'border-white/20 hover:border-white/40'
+                    }`}>
+                      <Image
+                        src={person.representativeFace}
+                        alt={`Person ${index + 1}`}
+                        width={80}
+                        height={80}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-white/5 text-white/40 text-2xl font-bold">?</div>`;
+                          }
+                        }}
+                      />
+                    </div>
+                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
+                      <span className="text-xs text-white/60 font-medium">{person.matchCount}</span>
+                    </div>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Masonry Gallery Grid */}
           {photos.length > 0 ? (
