@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { EventHighlight, Person } from '@/lib/types';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
-import { Download, ExternalLink, X } from 'lucide-react';
+import { Download, ExternalLink, X, Share2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PhotosPage() {
@@ -112,14 +112,37 @@ export default function PhotosPage() {
                     </p>
                   </div>
                   {selectedPerson && (
-                    <motion.button
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      onClick={() => setSelectedPerson(null)}
-                      className="px-4 py-2 rounded-full bg-linear-to-r from-violet-500/20 to-fuchsia-500/20 hover:from-violet-500/30 hover:to-fuchsia-500/30 text-white text-sm font-medium transition-all backdrop-blur-xl border border-white/10"
-                    >
-                      ✕ Clear Filter
-                    </motion.button>
+                    <div className="flex items-center gap-2">
+                      <motion.button
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        onClick={() => {
+                          const url = `${window.location.origin}/people/${selectedPerson}`;
+                          if (navigator.share) {
+                            navigator.share({
+                              title: 'Check out these photos!',
+                              text: 'I found some great photos of this person.',
+                              url: url,
+                            }).catch(console.error);
+                          } else {
+                            navigator.clipboard.writeText(url);
+                            alert('Link copied to clipboard!');
+                          }
+                        }}
+                        className="px-4 py-2 rounded-full bg-linear-to-r from-violet-500/20 to-fuchsia-500/20 hover:from-violet-500/30 hover:to-fuchsia-500/30 text-white text-sm font-medium transition-all backdrop-blur-xl border border-white/10 flex items-center gap-2"
+                      >
+                        <Share2 className="w-4 h-4" />
+                        <span className="hidden sm:inline">Share Profile</span>
+                      </motion.button>
+                      <motion.button
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        onClick={() => setSelectedPerson(null)}
+                        className="px-4 py-2 rounded-full bg-linear-to-r from-violet-500/20 to-fuchsia-500/20 hover:from-violet-500/30 hover:to-fuchsia-500/30 text-white text-sm font-medium transition-all backdrop-blur-xl border border-white/10"
+                      >
+                        ✕ <span className="hidden sm:inline">Clear Filter</span>
+                      </motion.button>
+                    </div>
                   )}
                 </div>
 
