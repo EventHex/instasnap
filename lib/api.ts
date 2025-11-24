@@ -13,6 +13,7 @@ import {
   EventHighlightsResponse,
   PeopleResponse,
   PersonPhotosResponse,
+  AlbumResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -320,6 +321,13 @@ class InstaSnapAPI {
       body: formData,
     });
     return this.handleResponse<{ success: boolean; message: string; data: any }>(response);
+  }
+
+  async getAlbums(eventId: string): Promise<AlbumResponse> {
+    const response = await fetch(
+      `${API_BASE}/api/v1/album?event=${eventId}`
+    );
+    return this.handleResponse<AlbumResponse>(response);
   }
 }
 

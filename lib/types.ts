@@ -176,6 +176,11 @@ export interface EventHighlight {
   uploadDate: string;
   event: string;
   isHighlight: boolean;
+  album?: {
+    _id: string;
+    name: string;
+    isFavourite: boolean;
+  };
 }
 
 export interface EventHighlightsResponse {
@@ -207,6 +212,28 @@ export interface PersonPhotosResponse {
   groupId: string;
   photos: EventPhoto[];
   totalPhotos: number;
+}
+
+export interface Album {
+  _id: string;
+  name: string;
+  event: {
+    _id: string;
+    value: string;
+  };
+  isFavourite: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface AlbumResponse {
+  success: boolean;
+  message: string;
+  response: Album[];
+  count: number;
+  totalCount: number;
+  filterCount: number;
 }
 
 // UI State Types

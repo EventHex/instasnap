@@ -2,17 +2,19 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '@/lib/api';
-import { EventHighlight, Person } from '@/lib/types';
+import { EventHighlight, Person, Album } from '@/lib/types';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
-import { Download, ExternalLink, X, Share2, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { Download, ExternalLink, X, Share2, ChevronLeft, ChevronRight, Play, Pause, FolderOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PhotosPage() {
   const [photos, setPhotos] = useState<EventHighlight[]>([]);
   const [allPhotos, setAllPhotos] = useState<EventHighlight[]>([]);
   const [people, setPeople] = useState<Person[]>([]);
+  const [albums, setAlbums] = useState<Album[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null);
+  const [selectedAlbum, setSelectedAlbum] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -47,39 +49,60 @@ export default function PhotosPage() {
     }
   }, [eventId]);
 
+  const fetchAlbums = useCallback(async () => {
+    try {
+      const response = await api.getAlbums(eventId);
+      if (response.success) {
+        setAlbums(response.response);
+      }
+    } catch (error) {
+      console.error('Failed to fetch albums:', error);
+    }
+  }, [eventId]);
+
   useEffect(() => {
     if (eventId) {
       fetchPeople();
+      fetchAlbums();
       fetchPhotos(1);
     }
-  }, [eventId, fetchPeople, fetchPhotos]);
+  }, [eventId, fetchPeople, fetchAlbums, fetchPhotos]);
 
-  // Filter photos when person is selected/deselected
+  // Filter photos when person or album is selected/deselected
   useEffect(() => {
+    let filtered = allPhotos;
+
+    // Filter by person
     if (selectedPerson) {
       const person = people.find(p => p.groupId === selectedPerson);
       if (person) {
-        const filtered = allPhotos.filter(photo => 
+        filtered = filtered.filter(photo => 
           person.eventImages.includes(photo._id)
         );
-        setPhotos(filtered);
       }
-    } else {
-      setPhotos(allPhotos);
     }
-  }, [selectedPerson, people, allPhotos]);
+
+    // Filter by album
+    if (selectedAlbum) {
+      filtered = filtered.filter(photo => 
+        photo.album?._id === selectedAlbum
+      );
+    }
+
+    setPhotos(filtered);
+  }, [selectedPerson, selectedAlbum, people, allPhotos]);
 
   const lastElementRef = useCallback((node: HTMLDivElement) => {
     if (loading) return;
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore && !selectedPerson) {
+      if (entries[0].isIntersecting && hasMore && !selectedPerson && !selectedAlbum) {
         setPage(prev => prev + 1);
         fetchPhotos(page + 1);
       }
     });
     if (node) observer.current.observe(node);
-  }, [loading, hasMore, page, fetchPhotos, selectedPerson]);
+  }, [loading, hasMore, page, fetchPhotos, selectedPerson, selectedAlbum]);
 
   // Navigation functions
   const handlePrevPhoto = useCallback(() => {
@@ -150,41 +173,50 @@ export default function PhotosPage() {
                       Photo Gallery
                     </h1>
                     <p className="text-sm md:text-base text-white/50 mt-2">
-                      {selectedPerson 
+                      {selectedPerson && selectedAlbum
+                        ? `${photos.length} photos with this person in this album`
+                        : selectedPerson 
                         ? `${photos.length} photos with this person`
+                        : selectedAlbum
+                        ? `${photos.length} photos in this album`
                         : `${photos.length} amazing moments captured`}
                     </p>
                   </div>
-                  {selectedPerson && (
+                  {(selectedPerson || selectedAlbum) && (
                     <div className="flex items-center gap-2">
+                      {selectedPerson && (
+                        <motion.button
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          onClick={() => {
+                            const url = `${window.location.origin}/people/${selectedPerson}`;
+                            if (navigator.share) {
+                              navigator.share({
+                                title: 'Check out these photos!',
+                                text: 'I found some great photos of this person.',
+                                url: url,
+                              }).catch(console.error);
+                            } else {
+                              navigator.clipboard.writeText(url);
+                              alert('Link copied to clipboard!');
+                            }
+                          }}
+                          className="px-4 py-2 rounded-full bg-linear-to-r from-violet-500/20 to-fuchsia-500/20 hover:from-violet-500/30 hover:to-fuchsia-500/30 text-white text-sm font-medium transition-all backdrop-blur-xl border border-white/10 flex items-center gap-2"
+                        >
+                          <Share2 className="w-4 h-4" />
+                          <span className="hidden sm:inline">Share Profile</span>
+                        </motion.button>
+                      )}
                       <motion.button
                         initial={{ scale: 0 }}
                         animate={{ scale: 1 }}
                         onClick={() => {
-                          const url = `${window.location.origin}/people/${selectedPerson}`;
-                          if (navigator.share) {
-                            navigator.share({
-                              title: 'Check out these photos!',
-                              text: 'I found some great photos of this person.',
-                              url: url,
-                            }).catch(console.error);
-                          } else {
-                            navigator.clipboard.writeText(url);
-                            alert('Link copied to clipboard!');
-                          }
+                          setSelectedPerson(null);
+                          setSelectedAlbum(null);
                         }}
-                        className="px-4 py-2 rounded-full bg-linear-to-r from-violet-500/20 to-fuchsia-500/20 hover:from-violet-500/30 hover:to-fuchsia-500/30 text-white text-sm font-medium transition-all backdrop-blur-xl border border-white/10 flex items-center gap-2"
-                      >
-                        <Share2 className="w-4 h-4" />
-                        <span className="hidden sm:inline">Share Profile</span>
-                      </motion.button>
-                      <motion.button
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        onClick={() => setSelectedPerson(null)}
                         className="px-4 py-2 rounded-full bg-linear-to-r from-violet-500/20 to-fuchsia-500/20 hover:from-violet-500/30 hover:to-fuchsia-500/30 text-white text-sm font-medium transition-all backdrop-blur-xl border border-white/10"
                       >
-                        ✕ <span className="hidden sm:inline">Clear Filter</span>
+                        ✕ <span className="hidden sm:inline">Clear All Filters</span>
                       </motion.button>
                     </div>
                   )}
@@ -266,6 +298,48 @@ export default function PhotosPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Albums Filter Pills */}
+                {albums.length > 0 && (
+                  <div className="space-y-3 mt-6">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-4 bg-linear-to-b from-violet-400 to-fuchsia-400 rounded-full" />
+                      <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">Browse by Album</span>
+                    </div>
+                    <div className="overflow-x-auto hide-scrollbar -mx-2 px-2">
+                      <div className="flex gap-2 pb-2">
+                        {albums.map((album, index) => (
+                          <motion.button
+                            key={album._id}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.03 }}
+                            onClick={() => setSelectedAlbum(album._id === selectedAlbum ? null : album._id)}
+                            className={`shrink-0 group relative transition-all duration-300 ${
+                              selectedAlbum === album._id ? 'scale-100' : 'scale-95 opacity-50 hover:opacity-80'
+                            }`}
+                          >
+                            <div className={`relative px-4 py-2 rounded-2xl flex items-center gap-3 transition-all duration-300 ${
+                              selectedAlbum === album._id 
+                                ? 'bg-linear-to-r from-violet-500/30 to-fuchsia-500/30 shadow-lg shadow-violet-500/20 border-2 border-violet-400/50' 
+                                : 'bg-white/5 hover:bg-white/10 border-2 border-white/10'
+                            }`}>
+                              <div className="w-10 h-10 rounded-full bg-linear-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center">
+                                <FolderOpen className="w-5 h-5 text-violet-300" />
+                              </div>
+                              <div className="text-left">
+                                <div className="text-sm font-semibold text-white">{album.name}</div>
+                                <div className="text-xs text-white/50">
+                                  {album.isFavourite && '⭐ '}Album
+                                </div>
+                              </div>
+                            </div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>
@@ -337,7 +411,13 @@ export default function PhotosPage() {
               >
                 <div className="text-6xl mb-4">📸</div>
                 <p className="text-white/60 text-lg">
-                  {selectedPerson ? 'No photos found for this person.' : 'No photos available yet.'}
+                  {selectedPerson && selectedAlbum 
+                    ? 'No photos found for this person in this album.' 
+                    : selectedPerson 
+                    ? 'No photos found for this person.' 
+                    : selectedAlbum
+                    ? 'No photos found in this album.'
+                    : 'No photos available yet.'}
                 </p>
               </motion.div>
             )}
