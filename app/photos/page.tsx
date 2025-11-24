@@ -5,7 +5,7 @@ import { api } from '@/lib/api';
 import { EventHighlight, Person, Album } from '@/lib/types';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
-import { Download, ExternalLink, X, Share2, ChevronLeft, ChevronRight, Play, Pause, FolderOpen } from 'lucide-react';
+import { Download, ExternalLink, X, Share2, ChevronLeft, ChevronRight, Play, Pause, FolderOpen, Folder } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PhotosPage() {
@@ -325,7 +325,11 @@ export default function PhotosPage() {
                                 : 'bg-white/5 hover:bg-white/10 border-2 border-white/10'
                             }`}>
                               <div className="w-10 h-10 rounded-full bg-linear-to-br from-violet-500/20 to-fuchsia-500/20 flex items-center justify-center">
-                                <FolderOpen className="w-5 h-5 text-violet-300" />
+                                {selectedAlbum === album._id ? (
+                                  <FolderOpen className="w-5 h-5 text-violet-300" />
+                                ) : (
+                                  <Folder className="w-5 h-5 text-violet-300" />
+                                )}
                               </div>
                               <div className="text-left">
                                 <div className="text-sm font-semibold text-white">{album.name}</div>
