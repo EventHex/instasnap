@@ -68,6 +68,25 @@ export default function HomePage() {
         
         {/* Top Section: Hero & Branding */}
         <div className="flex flex-col items-center justify-center space-y-4 md:space-y-6 max-w-3xl w-full mt-0 md:mt-0">
+          {photoPermission?.event?.value && (
+            <div className="relative group animate-fade-in">
+              <div className="absolute inset-0 bg-linear-to-r from-indigo-500/30 via-purple-500/30 to-pink-500/30 rounded-2xl blur-xl group-hover:blur-2xl transition-all duration-500 opacity-60 group-hover:opacity-100" />
+              <div className="relative flex items-center gap-3 px-6 py-3 bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-linear-to-br from-indigo-500 to-purple-600 shadow-lg">
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] md:text-xs text-white/50 font-medium uppercase tracking-wider">Event</span>
+                  <span className="text-sm md:text-lg font-bold text-white tracking-tight leading-tight">
+                    {photoPermission.event.value}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="inline-flex items-center justify-center p-1.5 glass rounded-full animate-float">
             <span className="px-4 py-1.5 text-[10px] md:text-xs font-semibold text-white uppercase tracking-widest bg-white/5 rounded-full">
               AI-Powered Event Photos
