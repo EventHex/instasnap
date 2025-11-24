@@ -18,12 +18,6 @@ export default function PersonDetailPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<EventPhoto | null>(null);
   const eventId = process.env.NEXT_PUBLIC_EVENT_ID || '';
 
-  // Generate random heights for masonry effect
-  const getRandomHeight = (index: number) => {
-    const heights = ['h-64', 'h-80', 'h-96', 'h-72', 'h-60'];
-    return heights[index % heights.length];
-  };
-
   useEffect(() => {
     const fetchPersonPhotos = async () => {
       try {
@@ -49,61 +43,99 @@ export default function PersonDetailPage() {
       <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[50%] bg-violet-500/10 rounded-full blur-[120px] animate-float pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[50%] bg-fuchsia-500/10 rounded-full blur-[120px] animate-float animate-delay-500 pointer-events-none" />
 
-      <div className="flex-1 flex flex-col items-center pt-24 md:pt-32 py-8 px-6 animate-fade-in relative z-10 overflow-y-auto">
-        <div className="w-full max-w-7xl space-y-12 pb-24">
+      <div className="flex-1 flex flex-col relative z-10 overflow-y-auto">
+        <div className="w-full max-w-7xl mx-auto px-4 md:px-6 py-8 pb-24">
 
           {/* Header with Back Button */}
-          <div className="space-y-6">
+          <div className="mt-20 md:mt-24 mb-8">
             <button
               onClick={() => router.back()}
-              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors group"
+              className="flex items-center gap-2 text-white/60 hover:text-white transition-colors group mb-6"
             >
               <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
               <span className="text-sm font-medium">Back to People</span>
             </button>
 
-            <div className="text-center space-y-4">
-              <h1 className="text-5xl md:text-7xl font-thin tracking-tighter text-white drop-shadow-2xl">
-                Person <br />
-                <span className="font-bold text-transparent bg-clip-text bg-linear-to-r from-violet-400 via-fuchsia-400 to-pink-400 animate-shimmer bg-size-[200%_auto]">
-                  Photos
-                </span>
-              </h1>
-              <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
-                {loading ? 'Loading...' : `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'} featuring this person`}
-              </p>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass rounded-3xl p-6 md:p-8 backdrop-blur-xl border border-white/10 relative overflow-hidden"
+            >
+              {/* Gradient Accent */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-violet-500/20 to-fuchsia-500/20 rounded-full blur-3xl -z-10" />
+              
+              <div className="relative z-10">
+                <h1 className="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-linear-to-r from-violet-400 via-fuchsia-400 to-pink-400 mb-3">
+                  Person Photos
+                </h1>
+                <p className="text-sm md:text-base text-white/50">
+                  {loading ? 'Loading photos...' : `${photos.length} ${photos.length === 1 ? 'photo' : 'photos'} featuring this person`}
+                </p>
+              </div>
+            </motion.div>
           </div>
 
           {/* Loading State */}
           {loading && (
             <div className="flex justify-center py-20">
-              <div className="w-12 h-12 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <div className="relative">
+                <div className="w-12 h-12 border-2 border-violet-500/30 border-t-violet-400 rounded-full animate-spin" />
+                <div className="absolute inset-0 w-12 h-12 border-2 border-fuchsia-500/20 border-t-fuchsia-400 rounded-full animate-spin animate-delay-150" />
+              </div>
             </div>
           )}
 
           {/* Masonry Gallery Grid */}
           {!loading && photos.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {photos.map((photo, index) => (
-                <motion.div
-                  key={photo._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.02 }}
-                  className={`${getRandomHeight(index)} relative rounded-2xl overflow-hidden glass cursor-pointer group`}
-                  onClick={() => setSelectedPhoto(photo)}
-                >
-                  <Image
-                    src={photo.thumbnail}
-                    alt="Event photo"
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </motion.div>
-              ))}
-            </div>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-2 md:gap-3 space-y-2 md:space-y-3 mt-8"
+            >
+              {photos.map((photo, index) => {
+                // Create mosaic pattern with varying heights
+                const patterns = [
+                  'h-48', 'h-64', 'h-80', 'h-56', 'h-72', 
+                  'h-52', 'h-60', 'h-96', 'h-44', 'h-68'
+                ];
+                const randomHeight = patterns[index % patterns.length];
+                
+                return (
+                  <motion.div
+                    key={photo._id}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: Math.min(index * 0.01, 0.3), duration: 0.4 }}
+                    className={`group relative ${randomHeight} rounded-xl md:rounded-2xl overflow-hidden cursor-pointer break-inside-avoid mb-2 md:mb-3`}
+                    onClick={() => setSelectedPhoto(photo)}
+                  >
+                    {/* Image */}
+                    <div className="absolute inset-0 bg-white/5 backdrop-blur-sm">
+                      <Image
+                        src={photo.thumbnail}
+                        alt={`Photo ${index + 1}`}
+                        fill
+                        className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+                      />
+                    </div>
+                    
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center">
+                            <ExternalLink className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Subtle Border */}
+                    <div className="absolute inset-0 rounded-xl md:rounded-2xl ring-1 ring-white/10 group-hover:ring-violet-400/50 transition-all duration-300" />
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           )}
 
           {/* Empty State */}

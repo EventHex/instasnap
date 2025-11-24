@@ -79,12 +79,6 @@ export default function PhotosPage() {
     if (node) observer.current.observe(node);
   }, [loading, hasMore, page, fetchPhotos, selectedPerson]);
 
-  // Generate random heights for masonry effect
-  const getRandomHeight = (index: number) => {
-    const heights = ['h-64', 'h-80', 'h-96', 'h-72', 'h-60'];
-    return heights[index % heights.length];
-  };
-
   return (
     <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-background">
       {/* Ambient Background Effects */}
@@ -217,11 +211,15 @@ export default function PhotosPage() {
               <motion.div 
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3"
+                className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-2 md:gap-3 space-y-2 md:space-y-3"
               >
                 {photos.map((photo, index) => {
-                  const heights = ['aspect-square', 'aspect-[3/4]', 'aspect-[4/3]'];
-                  const randomHeight = heights[index % heights.length];
+                  // Create mosaic pattern with varying heights
+                  const patterns = [
+                    'h-48', 'h-64', 'h-80', 'h-56', 'h-72', 
+                    'h-52', 'h-60', 'h-96', 'h-44', 'h-68'
+                  ];
+                  const randomHeight = patterns[index % patterns.length];
                   
                   return (
                     <motion.div
@@ -230,7 +228,7 @@ export default function PhotosPage() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: Math.min(index * 0.01, 0.3), duration: 0.4 }}
-                      className={`group relative ${randomHeight} rounded-xl md:rounded-2xl overflow-hidden cursor-pointer`}
+                      className={`group relative ${randomHeight} rounded-xl md:rounded-2xl overflow-hidden cursor-pointer break-inside-avoid mb-2 md:mb-3`}
                       onClick={() => setSelectedPhoto(photo)}
                     >
                       {/* Image */}

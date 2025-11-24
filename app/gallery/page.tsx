@@ -49,12 +49,6 @@ export default function GalleryPage() {
     if (node) observer.current.observe(node);
   }, [loading, hasMore, page, fetchHighlights]);
 
-  // Generate random heights for masonry effect
-  const getRandomHeight = (index: number) => {
-    const heights = ['h-64', 'h-80', 'h-96', 'h-72', 'h-60'];
-    return heights[index % heights.length];
-  };
-
     return (
         <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-background">
             {/* Ambient Background Effects */}
@@ -77,27 +71,56 @@ export default function GalleryPage() {
                         </p>
                     </div>          {/* Gallery Grid - Masonry Layout */}
           {highlights.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {highlights.map((photo, index) => (
-                <motion.div
-                  key={photo._id}
-                  ref={index === highlights.length - 1 ? lastElementRef : null}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.02 }}
-                  className={`${getRandomHeight(index)} relative rounded-2xl overflow-hidden glass cursor-pointer group`}
-                  onClick={() => setSelectedPhoto(photo)}
-                >
-                  <Image
-                    src={photo.thumbnail}
-                    alt="Event highlight"
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </motion.div>
-              ))}
-            </div>
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-2 md:gap-3 space-y-2 md:space-y-3"
+            >
+              {highlights.map((photo, index) => {
+                // Create mosaic pattern with varying heights
+                const patterns = [
+                  'h-48', 'h-64', 'h-80', 'h-56', 'h-72', 
+                  'h-52', 'h-60', 'h-96', 'h-44', 'h-68'
+                ];
+                const randomHeight = patterns[index % patterns.length];
+                
+                return (
+                  <motion.div
+                    key={photo._id}
+                    ref={index === highlights.length - 1 ? lastElementRef : null}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: Math.min(index * 0.01, 0.3), duration: 0.4 }}
+                    className={`group relative ${randomHeight} rounded-xl md:rounded-2xl overflow-hidden cursor-pointer break-inside-avoid mb-2 md:mb-3`}
+                    onClick={() => setSelectedPhoto(photo)}
+                  >
+                    {/* Image */}
+                    <div className="absolute inset-0 bg-white/5 backdrop-blur-sm">
+                      <Image
+                        src={photo.thumbnail}
+                        alt={`Highlight ${index + 1}`}
+                        fill
+                        className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+                      />
+                    </div>
+                    
+                    {/* Hover Overlay */}
+                    <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center">
+                            <ExternalLink className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Subtle Border */}
+                    <div className="absolute inset-0 rounded-xl md:rounded-2xl ring-1 ring-white/10 group-hover:ring-violet-400/50 transition-all duration-300" />
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           ) : !loading && (
             <div className="text-center py-20">
               <div className="inline-flex items-center justify-center w-24 h-24 rounded-[2rem] bg-white/5 text-5xl mb-6 shadow-inner ring-1 ring-white/10">
