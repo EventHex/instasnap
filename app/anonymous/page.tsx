@@ -344,26 +344,6 @@ export default function AnonymousMatchPage() {
                   </div>
                 </div>
               )}
-
-              {/* Registration Prompt */}
-              {results.length > 0 && (
-                <div className={`${cardClass} mt-8`}>
-                  <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
-                    <div className="text-center md:text-left space-y-2">
-                      <h3 className="text-xl font-bold text-white">Save Your Collection</h3>
-                      <p className="text-white/60 font-light max-w-md">
-                        Create an account to save these photos and get notified when new ones are found.
-                      </p>
-                    </div>
-                    <Link href="/registered" className="w-full md:w-auto">
-                      <button className={`${buttonSecondaryClass} w-full md:w-auto px-8 bg-white/10 hover:bg-white/20`}>
-                        <UserPlus className="w-4 h-4" />
-                        Create Account
-                      </button>
-                    </Link>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
