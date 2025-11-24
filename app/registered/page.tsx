@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/api';
 import { storage } from '@/lib/storage';
@@ -12,7 +12,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Lock, Sparkles, Camera, Download, Image as ImageIcon, LogOut, RefreshCw, Send, CheckCircle, ArrowRight, Smartphone, KeyRound, ChevronDown, X, ExternalLink, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
+import { ArrowLeft, Lock, Sparkles, Camera, Download, Image as ImageIcon, LogOut, RefreshCw, Send, CheckCircle, ArrowRight, Smartphone, KeyRound, ChevronDown, X, ExternalLink, ChevronLeft, ChevronRight, Play, Pause, Upload } from 'lucide-react';
+import { ContributeUpload } from '@/components/features/registered/ContributeUpload';
 
 type Step = 'mobile' | 'otp' | 'selfie' | 'photos';
 
@@ -58,6 +59,7 @@ export default function RegisteredPage() {
   const [selectedPhoto, setSelectedPhoto] = useState<FaceMatch | null>(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showContribute, setShowContribute] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const registerSelfieInputRef = useRef<HTMLInputElement>(null);
@@ -863,7 +865,7 @@ export default function RegisteredPage() {
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-2 gap-4 pt-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
                   <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
@@ -886,6 +888,18 @@ export default function RegisteredPage() {
                         <Sparkles className={`w-5 h-5 text-pink-400 ${loading ? 'animate-spin' : ''}`} />
                       </div>
                       <span className="text-sm">Find More Photos</span>
+                    </button>
+                  </div>
+
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl col-span-2 md:col-span-1">
+                    <button
+                      onClick={() => setShowContribute(true)}
+                      className="w-full h-full flex items-center justify-center gap-2 text-white font-semibold hover:scale-105 active:scale-95 transition-all group"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-500/30 to-fuchsia-500/30 flex items-center justify-center group-hover:from-violet-500/40 group-hover:to-fuchsia-500/40 transition-all">
+                        <Upload className="w-5 h-5 text-violet-400" />
+                      </div>
+                      <span className="text-sm">Contribute Photo</span>
                     </button>
                   </div>
                 </div>
@@ -1077,6 +1091,19 @@ export default function RegisteredPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Contribute Modal */}
+      {showContribute && (
+        <ContributeUpload
+          userId={userId || ''}
+          eventId={eventId}
+          onClose={() => setShowContribute(false)}
+          onSuccess={() => {
+            setShowContribute(false);
+            // Optional: Show success toast or refresh photos
+          }}
+        />
+      )}
 
       <Footer />
     </div>

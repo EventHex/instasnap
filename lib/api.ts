@@ -308,6 +308,19 @@ class InstaSnapAPI {
     );
     return this.handleResponse<PersonPhotosResponse>(response);
   }
+
+  async contributePhoto(file: File, eventId: string, userId: string): Promise<{ success: boolean; message: string; data: any }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('event', eventId);
+    formData.append('addedBy', userId);
+
+    const response = await fetch(`${API_BASE}/api/v1/contribute`, {
+      method: 'POST',
+      body: formData,
+    });
+    return this.handleResponse<{ success: boolean; message: string; data: any }>(response);
+  }
 }
 
 export const api = new InstaSnapAPI();
