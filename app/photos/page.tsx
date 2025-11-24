@@ -71,13 +71,13 @@ export default function PhotosPage() {
     if (loading) return;
     if (observer.current) observer.current.disconnect();
     observer.current = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && hasMore) {
+      if (entries[0].isIntersecting && hasMore && !selectedPerson) {
         setPage(prev => prev + 1);
         fetchPhotos(page + 1);
       }
     });
     if (node) observer.current.observe(node);
-  }, [loading, hasMore, page, fetchPhotos]);
+  }, [loading, hasMore, page, fetchPhotos, selectedPerson]);
 
   // Generate random heights for masonry effect
   const getRandomHeight = (index: number) => {
@@ -91,125 +91,197 @@ export default function PhotosPage() {
       <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[50%] bg-violet-500/10 rounded-full blur-[120px] animate-float pointer-events-none" />
       <div className="absolute bottom-[-20%] right-[-10%] w-[70%] h-[50%] bg-fuchsia-500/10 rounded-full blur-[120px] animate-float animate-delay-500 pointer-events-none" />
 
-      <div className="flex-1 flex flex-col items-center pt-24 md:pt-32 py-8 px-6 animate-fade-in relative z-10 overflow-y-auto">
-        <div className="w-full max-w-7xl space-y-12 pb-24">
-
-          {/* Header */}
-          <div className="text-center space-y-6">
-            <h1 className="text-5xl md:text-7xl font-thin tracking-tighter text-white drop-shadow-2xl">
-              Photo <br />
-              <span className="font-bold text-transparent bg-clip-text bg-linear-to-r from-violet-400 via-fuchsia-400 to-pink-400 animate-shimmer bg-size-[200%_auto]">
-                Gallery
-              </span>
-            </h1>
-            <p className="text-xl text-white/60 max-w-2xl mx-auto font-light">
-              {selectedPerson 
-                ? `Showing photos of ${people.find(p => p.groupId === selectedPerson)?.matchCount || 0} moments`
-                : 'Browse all photos from the event in our complete collection.'}
-            </p>
-          </div>
-
-          {/* People Filter Row */}
-          {people.length > 0 && (
-            <div className="w-full overflow-x-auto pb-4 -mx-6 px-6">
-              <div className="flex gap-4 min-w-max">
-                {/* All Photos Button */}
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  onClick={() => setSelectedPerson(null)}
-                  className={`shrink-0 group relative transition-all duration-300 ${
-                    !selectedPerson ? 'scale-110' : 'scale-100 hover:scale-105'
-                  }`}
-                >
-                  <div className={`w-20 h-20 rounded-full glass border-2 transition-all duration-300 flex items-center justify-center ${
-                    !selectedPerson 
-                      ? 'border-violet-400 shadow-lg shadow-violet-500/50' 
-                      : 'border-white/20 hover:border-white/40'
-                  }`}>
-                    <span className="text-2xl">📷</span>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col relative z-10 overflow-hidden">
+        {/* Hero Header with Glassmorphic Card */}
+        <div className="shrink-0 pt-20 md:pt-24 px-4 md:px-6 pb-4">
+          <div className="max-w-7xl mx-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="glass rounded-3xl p-6 md:p-8 backdrop-blur-xl border border-white/10 relative overflow-hidden"
+            >
+              {/* Gradient Accent */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-violet-500/20 to-fuchsia-500/20 rounded-full blur-3xl -z-10" />
+              
+              <div className="relative z-10">
+                {/* Title Row */}
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h1 className="text-3xl md:text-5xl font-bold text-transparent bg-clip-text bg-linear-to-r from-violet-400 via-fuchsia-400 to-pink-400">
+                      Photo Gallery
+                    </h1>
+                    <p className="text-sm md:text-base text-white/50 mt-2">
+                      {selectedPerson 
+                        ? `${photos.length} photos with this person`
+                        : `${photos.length} amazing moments captured`}
+                    </p>
                   </div>
-                  <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                    <span className="text-xs text-white/60 font-medium">All Photos</span>
-                  </div>
-                </motion.button>
+                  {selectedPerson && (
+                    <motion.button
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      onClick={() => setSelectedPerson(null)}
+                      className="px-4 py-2 rounded-full bg-linear-to-r from-violet-500/20 to-fuchsia-500/20 hover:from-violet-500/30 hover:to-fuchsia-500/30 text-white text-sm font-medium transition-all backdrop-blur-xl border border-white/10"
+                    >
+                      ✕ Clear Filter
+                    </motion.button>
+                  )}
+                </div>
 
-                {/* People Faces */}
-                {people.slice(0, 20).map((person, index) => (
-                  <motion.button
-                    key={person.groupId}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.03 }}
-                    onClick={() => setSelectedPerson(person.groupId === selectedPerson ? null : person.groupId)}
-                    className={`shrink-0 group relative transition-all duration-300 ${
-                      selectedPerson === person.groupId ? 'scale-110' : 'scale-100 hover:scale-105'
-                    }`}
-                  >
-                    <div className={`w-20 h-20 rounded-full overflow-hidden glass border-2 transition-all duration-300 ${
-                      selectedPerson === person.groupId 
-                        ? 'border-violet-400 shadow-lg shadow-violet-500/50' 
-                        : 'border-white/20 hover:border-white/40'
-                    }`}>
-                      <Image
-                        src={person.representativeFace}
-                        alt={`Person ${index + 1}`}
-                        width={80}
-                        height={80}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.style.display = 'none';
-                          const parent = target.parentElement;
-                          if (parent) {
-                            parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-white/5 text-white/40 text-2xl font-bold">?</div>`;
-                          }
-                        }}
-                      />
+                {/* People Filter Pills */}
+                {people.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1 h-4 bg-linear-to-b from-violet-400 to-fuchsia-400 rounded-full" />
+                      <span className="text-xs font-semibold text-white/70 uppercase tracking-wider">Find Photos By Person</span>
                     </div>
-                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-                      <span className="text-xs text-white/60 font-medium">{person.matchCount}</span>
+                    <div className="overflow-x-auto hide-scrollbar -mx-2 px-2">
+                      <div className="flex gap-2 pb-2">
+                        {/* All Photos Pill */}
+                        <button
+                          onClick={() => setSelectedPerson(null)}
+                          className={`shrink-0 group relative transition-all duration-300 ${
+                            !selectedPerson ? 'scale-100' : 'scale-95 opacity-50 hover:opacity-80'
+                          }`}
+                        >
+                          <div className={`relative px-4 py-2 rounded-2xl flex items-center gap-3 transition-all duration-300 ${
+                            !selectedPerson 
+                              ? 'bg-linear-to-r from-violet-500/30 to-fuchsia-500/30 shadow-lg shadow-violet-500/20 border-2 border-violet-400/50' 
+                              : 'bg-white/5 hover:bg-white/10 border-2 border-white/10'
+                          }`}>
+                            <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                              <span className="text-lg">🎨</span>
+                            </div>
+                            <div className="text-left">
+                              <div className="text-sm font-semibold text-white">All Photos</div>
+                              <div className="text-xs text-white/50">{allPhotos.length} total</div>
+                            </div>
+                          </div>
+                        </button>
+
+                        {/* People Pills */}
+                        {people.slice(0, 15).map((person, index) => (
+                          <motion.button
+                            key={person.groupId}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.03 }}
+                            onClick={() => setSelectedPerson(person.groupId === selectedPerson ? null : person.groupId)}
+                            className={`shrink-0 group relative transition-all duration-300 ${
+                              selectedPerson === person.groupId ? 'scale-100' : 'scale-95 opacity-50 hover:opacity-80'
+                            }`}
+                          >
+                            <div className={`relative p-1.5 rounded-full transition-all duration-300 ${
+                              selectedPerson === person.groupId 
+                                ? 'bg-linear-to-r from-violet-500/30 to-fuchsia-500/30 shadow-lg shadow-violet-500/20' 
+                                : 'bg-white/5 hover:bg-white/10'
+                            }`}>
+                              <div className="w-14 h-14 rounded-full overflow-hidden ring-2 ring-white/20">
+                                <Image
+                                  src={person.representativeFace}
+                                  alt={`Person ${index + 1}`}
+                                  width={56}
+                                  height={56}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                    const parent = target.parentElement;
+                                    if (parent) {
+                                      parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-linear-to-br from-violet-500/20 to-fuchsia-500/20 text-white/60 text-sm">?</div>`;
+                                    }
+                                  }}
+                                />
+                              </div>
+                              {/* Photo Count Badge */}
+                              <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-violet-500 border-2 border-background flex items-center justify-center">
+                                <span className="text-xs font-bold text-white">{person.matchCount}</span>
+                              </div>
+                            </div>
+                          </motion.button>
+                        ))}
+                      </div>
                     </div>
-                  </motion.button>
-                ))}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            </motion.div>
+          </div>
+        </div>
 
-          {/* Masonry Gallery Grid */}
-          {photos.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4">
-              {photos.map((photo, index) => (
-                <motion.div
-                  key={photo._id}
-                  ref={index === photos.length - 1 ? lastElementRef : null}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: index * 0.02, duration: 0.3 }}
-                  className={`group relative ${getRandomHeight(index)} rounded-2xl md:rounded-3xl overflow-hidden glass hover:scale-[1.02] transition-all duration-500 cursor-pointer`}
-                  onClick={() => setSelectedPhoto(photo)}
-                >
-                  <Image
-                    src={photo.thumbnail || photo.compressed}
-                    alt={`Photo ${index + 1}`}
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </motion.div>
-              ))}
-            </div>
-          ) : !loading && (
-            <div className="glass p-12 rounded-3xl text-center">
-              <p className="text-white/60 text-lg">No photos available yet.</p>
-            </div>
-          )}
+        {/* Photo Grid - Scrollable Area */}
+        <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-24">
+          <div className="max-w-7xl mx-auto pt-4">
+            {photos.length > 0 ? (
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-3"
+              >
+                {photos.map((photo, index) => {
+                  const heights = ['aspect-square', 'aspect-[3/4]', 'aspect-[4/3]'];
+                  const randomHeight = heights[index % heights.length];
+                  
+                  return (
+                    <motion.div
+                      key={photo._id}
+                      ref={index === photos.length - 1 ? lastElementRef : null}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: Math.min(index * 0.01, 0.3), duration: 0.4 }}
+                      className={`group relative ${randomHeight} rounded-xl md:rounded-2xl overflow-hidden cursor-pointer`}
+                      onClick={() => setSelectedPhoto(photo)}
+                    >
+                      {/* Image */}
+                      <div className="absolute inset-0 bg-white/5 backdrop-blur-sm">
+                        <Image
+                          src={photo.thumbnail || photo.compressed}
+                          alt={`Photo ${index + 1}`}
+                          fill
+                          className="object-cover transition-all duration-700 group-hover:scale-110 group-hover:brightness-110"
+                        />
+                      </div>
+                      
+                      {/* Hover Overlay */}
+                      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="absolute bottom-3 left-3 right-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center">
+                              <ExternalLink className="w-4 h-4 text-white" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
 
-          {loading && page === 1 && (
-            <div className="flex justify-center py-12">
-              <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            </div>
-          )}
+                      {/* Subtle Border */}
+                      <div className="absolute inset-0 rounded-xl md:rounded-2xl ring-1 ring-white/10 group-hover:ring-violet-400/50 transition-all duration-300" />
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            ) : !loading && (
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass p-12 rounded-3xl text-center"
+              >
+                <div className="text-6xl mb-4">📸</div>
+                <p className="text-white/60 text-lg">
+                  {selectedPerson ? 'No photos found for this person.' : 'No photos available yet.'}
+                </p>
+              </motion.div>
+            )}
+
+            {loading && page === 1 && (
+              <div className="flex justify-center py-12">
+                <div className="relative">
+                  <div className="w-12 h-12 border-2 border-violet-500/30 border-t-violet-400 rounded-full animate-spin" />
+                  <div className="absolute inset-0 w-12 h-12 border-2 border-fuchsia-500/20 border-t-fuchsia-400 rounded-full animate-spin animate-delay-150" />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
