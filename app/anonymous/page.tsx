@@ -6,11 +6,11 @@ import { api } from '@/lib/api';
 import { storage } from '@/lib/storage';
 import { AnonymousPhoto, PhotoPermission } from '@/lib/types';
 import { AIMatchingLoader } from '@/components/ui/AIMatchingLoader';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
-import { ArrowLeft, Camera, ExternalLink, Sparkles, Search, UserPlus } from 'lucide-react';
+import { ArrowLeft, Camera, ExternalLink, Sparkles, Search, UserPlus, X, Download, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 
 export default function AnonymousMatchPage() {
   const router = useRouter();
@@ -23,6 +23,9 @@ export default function AnonymousMatchPage() {
   const [results, setResults] = useState<AnonymousPhoto[]>([]);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<AnonymousPhoto | null>(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const eventId = process.env.NEXT_PUBLIC_EVENT_ID || '';
 
@@ -137,6 +140,48 @@ export default function AnonymousMatchPage() {
       }, 1000);
     }
   };
+
+  // Navigation functions
+  const handlePrevPhoto = () => {
+    setSelectedPhotoIndex((prev) => {
+      const newIndex = prev > 0 ? prev - 1 : results.length - 1;
+      setSelectedPhoto(results[newIndex]);
+      return newIndex;
+    });
+  };
+
+  const handleNextPhoto = () => {
+    setSelectedPhotoIndex((prev) => {
+      const newIndex = prev < results.length - 1 ? prev + 1 : 0;
+      setSelectedPhoto(results[newIndex]);
+      return newIndex;
+    });
+  };
+
+  // Slideshow effect
+  useEffect(() => {
+    if (isPlaying && selectedPhoto) {
+      const interval = setInterval(() => {
+        handleNextPhoto();
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isPlaying, selectedPhoto]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!selectedPhoto) return;
+      if (e.key === 'ArrowLeft') handlePrevPhoto();
+      if (e.key === 'ArrowRight') handleNextPhoto();
+      if (e.key === 'Escape') {
+        setSelectedPhoto(null);
+        setIsPlaying(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [selectedPhoto]);
 
   return (
     <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-background">
@@ -294,6 +339,11 @@ export default function AnonymousMatchPage() {
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: index * 0.05, duration: 0.3 }}
                       className="group relative aspect-square rounded-2xl md:rounded-3xl overflow-hidden glass hover:scale-[1.03] transition-all duration-500 cursor-pointer"
+                      onClick={() => {
+                        setSelectedPhoto(photo);
+                        setSelectedPhotoIndex(index);
+                        setIsPlaying(false);
+                      }}
                     >
                       <Image
                         src={photo.thumbnailUrl || photo.compressedUrl}
@@ -348,6 +398,122 @@ export default function AnonymousMatchPage() {
           )}
         </div>
       </div>
+
+      {/* Lightbox Modal */}
+      <AnimatePresence>
+        {selectedPhoto && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl"
+            onClick={() => {
+              setSelectedPhoto(null);
+              setIsPlaying(false);
+            }}
+          >
+            {/* Close Button */}
+            <button
+              onClick={() => {
+                setSelectedPhoto(null);
+                setIsPlaying(false);
+              }}
+              className="absolute top-6 right-6 w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-transform z-20"
+            >
+              <X className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Previous Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrevPhoto();
+              }}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-all z-20 hover:bg-white/20"
+            >
+              <ChevronLeft className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Next Button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleNextPhoto();
+              }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-all z-20 hover:bg-white/20"
+            >
+              <ChevronRight className="w-6 h-6 text-white" />
+            </button>
+
+            {/* Photo Counter and Play Button */}
+            <div className="absolute top-6 left-6 flex items-center gap-3 z-20">
+              {/* Play/Pause Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsPlaying(!isPlaying);
+                }}
+                className="w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-transform hover:bg-white/20"
+              >
+                {isPlaying ? (
+                  <Pause className="w-5 h-5 text-white" />
+                ) : (
+                  <Play className="w-5 h-5 text-white ml-0.5" />
+                )}
+              </button>
+
+              {/* Photo Counter */}
+              <div className="px-4 py-2.5 glass rounded-full backdrop-blur-xl">
+                <span className="text-sm font-semibold text-white">
+                  {selectedPhotoIndex + 1} / {results.length}
+                </span>
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative max-w-6xl w-full max-h-[90vh] rounded-3xl overflow-hidden glass"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="relative w-full h-[80vh]">
+                <Image
+                  src={selectedPhoto.originalUrl}
+                  alt="Full size"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+              
+              <div className="absolute bottom-0 left-0 right-0 bg-linear-to-t from-black/80 to-transparent p-6">
+                <div className="flex gap-3 justify-center">
+                  <a
+                    href={selectedPhoto.originalUrl}
+                    download
+                    className="px-6 py-3 bg-white/90 hover:bg-white text-black rounded-2xl font-semibold text-sm flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </a>
+                  <a
+                    href={selectedPhoto.originalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl font-semibold text-sm flex items-center gap-2 transition-all hover:scale-105 active:scale-95 backdrop-blur-xl"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    Open
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <Footer />
     </div>
   );

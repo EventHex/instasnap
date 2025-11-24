@@ -6,7 +6,7 @@ import { api } from '@/lib/api';
 import { EventPhoto } from '@/lib/types';
 import Image from 'next/image';
 import { Footer } from '@/components/layout/Footer';
-import { ArrowLeft, Download, ExternalLink, X } from 'lucide-react';
+import { ArrowLeft, Download, ExternalLink, X, ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PersonDetailPage() {
@@ -16,6 +16,8 @@ export default function PersonDetailPage() {
   const [photos, setPhotos] = useState<EventPhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPhoto, setSelectedPhoto] = useState<EventPhoto | null>(null);
+  const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
+  const [isPlaying, setIsPlaying] = useState(false);
   const eventId = process.env.NEXT_PUBLIC_EVENT_ID || '';
 
   useEffect(() => {
@@ -36,6 +38,48 @@ export default function PersonDetailPage() {
       fetchPersonPhotos();
     }
   }, [eventId, groupId]);
+
+  // Navigation functions
+  const handlePrevPhoto = () => {
+    setSelectedPhotoIndex((prev) => {
+      const newIndex = prev > 0 ? prev - 1 : photos.length - 1;
+      setSelectedPhoto(photos[newIndex]);
+      return newIndex;
+    });
+  };
+
+  const handleNextPhoto = () => {
+    setSelectedPhotoIndex((prev) => {
+      const newIndex = prev < photos.length - 1 ? prev + 1 : 0;
+      setSelectedPhoto(photos[newIndex]);
+      return newIndex;
+    });
+  };
+
+  // Slideshow effect
+  useEffect(() => {
+    if (isPlaying && selectedPhoto) {
+      const interval = setInterval(() => {
+        handleNextPhoto();
+      }, 3000);
+      return () => clearInterval(interval);
+    }
+  }, [isPlaying, selectedPhoto]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!selectedPhoto) return;
+      if (e.key === 'ArrowLeft') handlePrevPhoto();
+      if (e.key === 'ArrowRight') handleNextPhoto();
+      if (e.key === 'Escape') {
+        setSelectedPhoto(null);
+        setIsPlaying(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [selectedPhoto]);
 
   return (
     <div className="flex flex-col h-dvh w-full relative overflow-hidden bg-background">
@@ -107,7 +151,11 @@ export default function PersonDetailPage() {
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: Math.min(index * 0.01, 0.3), duration: 0.4 }}
                     className={`group relative ${randomHeight} rounded-xl md:rounded-2xl overflow-hidden cursor-pointer break-inside-avoid mb-2 md:mb-3`}
-                    onClick={() => setSelectedPhoto(photo)}
+                    onClick={() => {
+                      setSelectedPhoto(photo);
+                      setSelectedPhotoIndex(index);
+                      setIsPlaying(false);
+                    }}
                   >
                     {/* Image */}
                     <div className="absolute inset-0 bg-white/5 backdrop-blur-sm">
@@ -156,14 +204,68 @@ export default function PersonDetailPage() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/95 backdrop-blur-xl"
-              onClick={() => setSelectedPhoto(null)}
+              onClick={() => {
+                setSelectedPhoto(null);
+                setIsPlaying(false);
+              }}
             >
+              {/* Close Button */}
               <button
-                onClick={() => setSelectedPhoto(null)}
-                className="absolute top-6 right-6 w-12 h-12 flex items-center justify-center rounded-full glass hover:bg-white/10 transition-colors z-10"
+                onClick={() => {
+                  setSelectedPhoto(null);
+                  setIsPlaying(false);
+                }}
+                className="absolute top-6 right-6 w-12 h-12 flex items-center justify-center rounded-full glass hover:bg-white/10 transition-colors z-20"
               >
                 <X className="w-6 h-6 text-white" />
               </button>
+
+              {/* Previous Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrevPhoto();
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-all z-20 hover:bg-white/20"
+              >
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </button>
+
+              {/* Next Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNextPhoto();
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-all z-20 hover:bg-white/20"
+              >
+                <ChevronRight className="w-6 h-6 text-white" />
+              </button>
+
+              {/* Photo Counter and Play Button */}
+              <div className="absolute top-6 left-6 flex items-center gap-3 z-20">
+                {/* Play/Pause Button */}
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsPlaying(!isPlaying);
+                  }}
+                  className="w-12 h-12 glass rounded-full flex items-center justify-center hover:scale-110 transition-transform hover:bg-white/20"
+                >
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5 text-white" />
+                  ) : (
+                    <Play className="w-5 h-5 text-white ml-0.5" />
+                  )}
+                </button>
+
+                {/* Photo Counter */}
+                <div className="px-4 py-2.5 glass rounded-full backdrop-blur-xl">
+                  <span className="text-sm font-semibold text-white">
+                    {selectedPhotoIndex + 1} / {photos.length}
+                  </span>
+                </div>
+              </div>
 
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
