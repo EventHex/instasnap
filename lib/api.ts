@@ -11,6 +11,8 @@ import {
   RegisterFormData,
   PhotoPermissionResponse,
   EventHighlightsResponse,
+  PeopleResponse,
+  PersonPhotosResponse,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -291,6 +293,20 @@ class InstaSnapAPI {
       `${API_BASE}/api/v1/mobile/instasnap/user-matches?userId=${userId}&eventId=${eventId}`
     );
     return this.handleResponse<{ success: boolean; matches: any[]; count: number }>(response);
+  }
+
+  async getPeople(eventId: string): Promise<PeopleResponse> {
+    const response = await fetch(
+      `${API_BASE}/api/v1/insta-snap/people?event=${eventId}`
+    );
+    return this.handleResponse<PeopleResponse>(response);
+  }
+
+  async getPersonPhotos(groupId: string, eventId: string): Promise<PersonPhotosResponse> {
+    const response = await fetch(
+      `${API_BASE}/api/v1/insta-snap/people/${groupId}/photos?event=${eventId}`
+    );
+    return this.handleResponse<PersonPhotosResponse>(response);
   }
 }
 

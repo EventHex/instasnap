@@ -187,6 +187,28 @@ export interface EventHighlightsResponse {
   filterCount: number;
 }
 
+export interface Person {
+  _id: string;
+  groupId: string;
+  representativeFace: string;
+  matchCount: number;
+  qualityScore: number;
+  eventImages: string[];
+}
+
+export interface PeopleResponse {
+  success: boolean;
+  people: Person[];
+  totalPeople: number;
+}
+
+export interface PersonPhotosResponse {
+  success: boolean;
+  groupId: string;
+  photos: EventPhoto[];
+  totalPhotos: number;
+}
+
 // UI State Types
 export type UIStep = 'mobile' | 'otp' | 'selfie' | 'photos' | 'error';
 

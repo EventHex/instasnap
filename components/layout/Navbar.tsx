@@ -132,6 +132,14 @@ export function Navbar() {
                     )}>
                         Photos
                     </Link>
+                    <Link href="/people" className={cn(
+                        "px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-300",
+                        pathname === '/people' || pathname?.startsWith('/people/')
+                            ? "bg-white/10 text-white shadow-inner"
+                            : "text-muted-foreground hover:text-white hover:bg-white/5"
+                    )}>
+                        People
+                    </Link>
                     {isAuthenticated && (
                         <>
                             <Link href="/registered" className={cn(
